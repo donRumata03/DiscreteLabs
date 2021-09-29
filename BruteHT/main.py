@@ -86,10 +86,17 @@ def not_lies_only_in_x_class():
                 succ = True
                 break
 
+def lin_mon():
+    fs = get_all_functions(4)
+
+    for f in fs:
+        if is_linear(f) and is_monotonous(f):
+            print(build_linear(f))
+
 
 if __name__ == '__main__':
     # mass_check()
     # not_lies_only_in_x_class()
     # only_in_x_class()
-    depends_on_at_least_three_not_lies_in_any()
-
+    # depends_on_at_least_three_not_lies_in_any()
+    lin_mon()
