@@ -1,6 +1,12 @@
 from copy import copy
 from typing import List, Tuple, Dict
 
+def int_table_to_bool(t):
+	return [(tuple(bool(b) for b in p[0]), bool(p[1])) for p in t]
+
+
+def not_bool_vec(vec):
+	return tuple(not i for i in vec)
 
 class BoolFunction:
 	"""
@@ -28,7 +34,7 @@ class BoolFunction:
 	def __call__(self, bool_vector):
 		assert len(bool_vector) == self.dims()
 
-		return self.truth_map
+		return self.truth_map[tuple(bool_vector)]
 
 	def __str__(self):
 		return str(self.truth_map)

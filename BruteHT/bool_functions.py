@@ -3,8 +3,8 @@ from BoolFunction import *
 from itertools import product
 
 def get_all_functions(n: int) -> List[BoolFunction]:
-	possible_args = tuple(product((0, 1), repeat=n))
-	possible_function_values = list(product((0, 1), repeat=len(possible_args)))
+	possible_args = tuple(product((False, True), repeat=n))
+	possible_function_values = list(product((False, True), repeat=len(possible_args)))
 
 	res = []
 	for value_set in possible_function_values:
@@ -16,17 +16,36 @@ def get_all_functions(n: int) -> List[BoolFunction]:
 
 # Checking properties:
 
-def is_preserving_zero():
+def is_preserving_zero(bf: BoolFunction):
+	return not bf([False] * bf.dims())
+
+def is_preserving_one(bf: BoolFunction):
+	return bf([True] * bf.dims())
+
+def is_monotonous(bf: BoolFunction):
+	n = bf.dims()
+
+
+def is_self_dual(bf: BoolFunction):
+	for (k, v) in bf.truth_table:
+		if v == bf(not_bool_vec(k)):
+			return False
+	return True
+
+def is_linear(bf: BoolFunction):
 	pass
 
-def is_preserving_one():
-	pass
+property_dict = {
+	"Self-Dual": is_self_dual,
+	"Preserving one": is_preserving_one,
+	"Preserving zero": is_preserving_zero,
+	"Linear": is_linear,
+	"Monotonous": is_monotonous,
+}
 
-def is_monotonous():
-	pass
+def check_bf_properties(bf: BoolFunction):
+	for p in property_dict:
+		print(p + ":", property_dict[p](bf))
 
-def is_self_dual():
-	pass
+### Significantly depends:
 
-def is_linear(func):
-	pass
