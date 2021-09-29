@@ -1,12 +1,14 @@
 from copy import copy
 from typing import List, Tuple, Dict
 
+
 def int_table_to_bool(t):
 	return [(tuple(bool(b) for b in p[0]), bool(p[1])) for p in t]
 
 
-def not_bool_vec(vec):
+def inverse_bool_vec(vec):
 	return tuple(not i for i in vec)
+
 
 class BoolFunction:
 	"""
@@ -20,10 +22,6 @@ class BoolFunction:
 		self.truth_map = {}
 		for p in self.truth_table:
 			self.truth_map[p[0]] = p[1]
-		# print(self.truth_map)
-
-	# def gen_map(self):
-
 
 	def dims(self):
 		return len(self.truth_table[0][0])

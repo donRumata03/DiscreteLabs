@@ -1,4 +1,4 @@
-from bool_functions.bool_functions import *
+from bool_functions.bool_function_properties import *
 
 for_p1 = (
     ((0, 0), 0),
@@ -46,6 +46,19 @@ def depends_on_at_least_three_not_lies_in_any():
     for f in good_fs:
         print(repr(f))
 
+
+def depends_on_at_least_x_lies_in_all(x, collect_down_from=4):
+    fs = sum([get_all_functions(i) for i in range(collect_down_from)], [])
+
+    good_fs = [
+        f for f in fs if significantly_depends_on_at_least(f, x) and all([cl_checker(f) for cl_checker in post_class_checkers])
+    ]
+
+    print("Found:", len(good_fs))
+    for f in good_fs:
+        print(repr(f))
+
+
 def only_in_x_class():
     fs = get_all_functions(3)
 
@@ -73,6 +86,7 @@ def only_in_x_class():
     sdf = BoolFunction((((False, False, False), True), ((False, False, True), False), ((False, True, False), False), ((False, True, True), False), ((True, False, False), True), ((True, False, True), True), ((True, True, False), True), ((True, True, True), False)))
     print(build_linear(sdf))
 
+
 def not_lies_only_in_x_class():
     fs = get_all_functions(3)
 
@@ -85,6 +99,17 @@ def not_lies_only_in_x_class():
                 print(repr(f))
                 succ = True
                 break
+
+
+def how_much_dep_on_all(n):
+    fs = get_all_functions(n)
+    return sum([1 for f in fs if significantly_depends_on_all(f)])
+
+
+def check_dep_on_all_amount_dynamic():
+    for i in range(5):
+        print(i, how_much_dep_on_all(i))
+
 
 def lin_mon():
     fs = get_all_functions(4)
@@ -99,4 +124,8 @@ if __name__ == '__main__':
     # not_lies_only_in_x_class()
     # only_in_x_class()
     # depends_on_at_least_three_not_lies_in_any()
-    lin_mon()
+    depends_on_at_least_x_lies_in_all(1)
+    # lin_mon()
+
+    # 2 ** (2 ** i) -
+

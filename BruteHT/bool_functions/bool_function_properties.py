@@ -2,6 +2,7 @@ from bool_functions.BoolFunction import *
 from bool_functions.zhegalkin_polynomial import *
 from itertools import product
 
+
 def get_all_functions(n: int) -> List[BoolFunction]:
 	possible_args = tuple(product((False, True), repeat=n))
 	possible_function_values = list(product((False, True), repeat=len(possible_args)))
@@ -13,14 +14,14 @@ def get_all_functions(n: int) -> List[BoolFunction]:
 	return res
 
 
-
-# Checking properties:
-
+# Checking lying Post classes:
 def is_preserving_zero(bf: BoolFunction):
 	return not bf([False] * bf.dims())
 
+
 def is_preserving_one(bf: BoolFunction):
 	return bf([True] * bf.dims())
+
 
 def is_monotonous(bf: BoolFunction):
 	n = bf.dims()
@@ -38,7 +39,7 @@ def is_monotonous(bf: BoolFunction):
 
 def is_self_dual(bf: BoolFunction):
 	for (k, v) in bf.truth_table:
-		if v == bf(not_bool_vec(k)):
+		if v == bf(inverse_bool_vec(k)):
 			return False
 	return True
 
@@ -47,7 +48,7 @@ def is_linear(bf: BoolFunction):
 	n = bf.dims()
 	a_0 = bf([False] * n)
 	a_s = [a_0 ^ bf([False] * i + [True] + [False] * (n - i - 1)) for i in range(n)]
-	pz = ZhegalkinPolynomial(a_0, a_s)
+	pz = LinearZhegalkinPolynomial(a_0, a_s)
 
 	for p in bf.truth_table:
 		if pz(p[0]) != p[1]:

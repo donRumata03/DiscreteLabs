@@ -1,7 +1,11 @@
 from functools import reduce
 from operator import xor
 
-class ZhegalkinPolynomial:
+from bool_functions.BoolFunction import *
+# from bool_functions.BoolFunction import BoolFunction
+
+
+class LinearZhegalkinPolynomial:
 	def __init__(self, a_0, a_s):
 		self.a_0 = a_0
 		self.a_s = a_s
@@ -18,10 +22,10 @@ class ZhegalkinPolynomial:
 		return str(self.a_0) + ", " + str(self.a_s)
 
 
-def build_linear(bf):
+def build_linear(bf: BoolFunction):
 	n = bf.dims()
 	a_0 = bf([False] * n)
 	a_s = [a_0 ^ bf([False] * i + [True] + [False] * (n - i - 1)) for i in range(n)]
-	return ZhegalkinPolynomial(a_0, a_s)
+	return LinearZhegalkinPolynomial(a_0, a_s)
 
 
