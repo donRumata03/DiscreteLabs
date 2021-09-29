@@ -15,10 +15,7 @@ class BoolFunction:
 	// TODO: arg (0, ..., 0) is at index 0, so don't need to provide it!
 	"""
 
-	# self.truth_table: Tuple[Tuple[Tuple[int, ...], int]] = []
-	# truth_map: Dict[Tuple[int, ...], int] = {}
-
-	def __init__(self, truth_table: Tuple[Tuple[Tuple[int, ...], int]]):
+	def __init__(self, truth_table: Tuple[Tuple[Tuple[bool, ...], bool]]):
 		self.truth_table = truth_table[:]
 		self.truth_map = {}
 		for p in self.truth_table:
@@ -38,3 +35,6 @@ class BoolFunction:
 
 	def __str__(self):
 		return str(self.truth_map)
+
+	def __repr__(self):
+		return str(self.truth_table)

@@ -35,8 +35,7 @@ def mass_check():
         check_bf_properties(f)
 
 
-if __name__ == '__main__':
-    # mass_check()
+def depends_on_at_least_three_not_lies_in_any():
     fs = get_all_functions(3)
 
     good_fs = [
@@ -45,4 +44,52 @@ if __name__ == '__main__':
 
     print("Found:", len(good_fs))
     for f in good_fs:
-        print(f)
+        print(repr(f))
+
+def only_in_x_class():
+    fs = get_all_functions(3)
+
+    for cls_name, cls_checker in property_dict:
+        print(cls_name, ":")
+        other_class_checkers = [other_cls[1] for other_cls in property_dict if other_cls[0] != cls_name]
+        succ = False
+        for f in fs:
+            if cls_checker(f) and not any([c(f) for c in other_class_checkers]):
+                print(repr(f))
+                succ = True
+                break
+        if succ:
+            continue
+        print("Fail...")
+        for f in fs:
+            if cls_checker(f) and sum([c(f) for c in other_class_checkers]) == 1 and not is_preserving_one(f) and not is_preserving_zero(f):
+                print("Almost: ", repr(f))
+                for name, ch in property_dict:
+                    if name != cls_name and ch(f):
+                        print(name)
+
+
+    print("ZP for s-dual:")
+    sdf = BoolFunction((((False, False, False), True), ((False, False, True), False), ((False, True, False), False), ((False, True, True), False), ((True, False, False), True), ((True, False, True), True), ((True, True, False), True), ((True, True, True), False)))
+    print(build_linear(sdf))
+
+def not_lies_only_in_x_class():
+    fs = get_all_functions(3)
+
+    for cls_name, cls_checker in property_dict:
+        print(cls_name, ":")
+        other_class_checkers = [other_cls[1] for other_cls in property_dict if other_cls[0] != cls_name]
+        succ = False
+        for f in fs:
+            if not cls_checker(f) and all([c(f) for c in other_class_checkers]):
+                print(repr(f))
+                succ = True
+                break
+
+
+if __name__ == '__main__':
+    # mass_check()
+    # not_lies_only_in_x_class()
+    # only_in_x_class()
+    depends_on_at_least_three_not_lies_in_any()
+
