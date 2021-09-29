@@ -63,6 +63,9 @@ property_dict = [
 	("Monotonous", is_monotonous),
 	("Linear", is_linear),
 ]
+post_class_checkers = [
+	p[1] for p in property_dict
+]
 
 def check_bf_properties(bf: BoolFunction):
 	for p in property_dict + [("Significantly depends on all args", significantly_depends_on_all)]:
@@ -79,6 +82,9 @@ def significantly_depends(bf: BoolFunction, arg_index: int):
 			return True
 	return False
 
+def significantly_depends_on_at_least(bf: BoolFunction, at_least: int):
+	return sum([significantly_depends(bf, i) for i in range(bf.dims())]) >= at_least
+
 def significantly_depends_on_all(bf: BoolFunction):
-	return all([significantly_depends(bf, i) for i in range(bf.dims())])
+	return significantly_depends_on_at_least(bf, bf.dims())
 

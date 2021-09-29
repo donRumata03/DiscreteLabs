@@ -36,8 +36,13 @@ def mass_check():
 
 
 if __name__ == '__main__':
-    mass_check()
-    # fs = get_all_functions(4)
+    # mass_check()
+    fs = get_all_functions(3)
 
-    # for f in fs:
-    #     print(f)
+    good_fs = [
+        f for f in fs if significantly_depends_on_at_least(f, 3) and not any([cl_checker(f) for cl_checker in post_class_checkers])
+    ]
+
+    print("Found:", len(good_fs))
+    for f in good_fs:
+        print(f)
