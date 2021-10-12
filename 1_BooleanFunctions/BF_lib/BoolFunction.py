@@ -17,7 +17,11 @@ def to_counting_system(number: int, base: int):
 
 def to_bin_vec(index, dims):
 	assert index < 2 ** dims
-	return tuple(map(bool, list(to_counting_system(index, 2))))
+
+	res = []
+	for d in range(dims):
+		res.append(bool((index >> d) % 2))
+	return tuple(reversed(res))
 
 def as_dict_by_bin_vec(ms, dims):
 	res = {}
@@ -44,6 +48,8 @@ class BoolFunction:
 
 		return self.truth_ms[index]
 
+	def at(self, index):
+		return self(index)
 
 	def __str__(self):
 		return str(as_dict_by_bin_vec(self.truth_ms, self.dims))
