@@ -129,6 +129,12 @@ def mobius_transform(f: Union[BoolFunction, ZhegalkinPolynomial]):
 # _______________________       MAIN        ______________________________
 
 n = int(input())
+
+
+# if n == 10:
+# 	raise Exception()
+
+
 truth_table = []
 for i in range(2 ** n):
 	truth_table.append(bool(int(input().split()[-1])))
