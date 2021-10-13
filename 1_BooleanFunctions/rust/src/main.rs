@@ -103,14 +103,24 @@ fn get_slight_dominated(bitmask: usize) -> HashSet<usize> {
 }
 
 // TODO: use the method of branches and bounds with dyn
-fn get_dominated_or_eq(bitmask: usize) -> HashSet<usize> {
-	let mut res = HashSet::new();
+fn get_dominated_or_eq(bitmask: usize) -> Vec<usize> {
+	// let mut res = HashSet::new();
+	//
+	// for submsk in get_slight_dominated(bitmask).iter() {
+	// 	res.extend(get_dominated_or_eq(*submsk));
+	// }
+	// res.insert(bitmask);
+	//
+	// res
 
-	for submsk in get_slight_dominated(bitmask).iter() {
-		res.extend(get_dominated_or_eq(*submsk));
+	let mut res = Vec::new();
+
+	let mut s: isize = bitmask as isize;
+	while s > 0 {
+		res.push(s as usize);
+		s = (s-1) & (bitmask as isize);
 	}
-	res.insert(bitmask);
-
+	res.push(0);
 	res
 }
 
@@ -183,6 +193,8 @@ fn main() {
 	// dct.insert((true, false), true);
 	// dct.insert((true, true), false);
 	// println!("{:?}", dct);
+	//
+	// println!(get_dominated_or_eq())
 
 	let mut input = String::from("");
 	let mut scanner = Scanner::new(BufReader::new(io::stdin()));
