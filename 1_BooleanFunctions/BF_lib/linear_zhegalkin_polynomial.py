@@ -22,9 +22,9 @@ class LinearZhegalkinPolynomial:
 
 
 def build_linear(bf: BoolFunction):
-	n = bf.dims()
-	a_0 = bf([False] * n)
-	a_s = [a_0 ^ bf([False] * i + [True] + [False] * (n - i - 1)) for i in range(n)]
+	n = bf.dimensions()
+	a_0 = bf(bin_vec_to_mask([False] * n))
+	a_s = [a_0 ^ bf(bin_vec_to_mask([False] * i + [True] + [False] * (n - i - 1))) for i in range(n)]
 	return LinearZhegalkinPolynomial(a_0, a_s)
 
 

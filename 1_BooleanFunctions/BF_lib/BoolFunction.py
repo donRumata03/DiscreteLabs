@@ -1,6 +1,6 @@
 import math
 from copy import copy
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Iterable, Collection, Union
 
 
 def int_table_to_bool(t):
@@ -15,13 +15,28 @@ def to_counting_system(number: int, base: int):
 		return str(number)
 	return to_counting_system(number // base, base) + to_counting_system(number % base, base)
 
+
 def to_bin_vec(index, dims):
 	assert index < 2 ** dims
 
 	res = []
 	for d in range(dims):
 		res.append(bool((index >> d) % 2))
-	return tuple(reversed(res))
+	return tuple(res)
+
+
+def bin_vec_to_mask(vec: Iterable[bool]):
+	res = 0
+
+	for pos in range(len(vec)):
+		res |= (vec[pos] << pos)
+
+	return res
+
+
+def set_bit_to(mask: int, index: int, value: bool):
+	return (mask & ~(1 << index)) | (value << index)
+
 
 def as_dict_by_bin_vec(ms, dims):
 	res = {}
@@ -36,7 +51,7 @@ class BoolFunction:
 	Stores truth table as list of booleans and can be called
 	"""
 
-	def __init__(self, truth_ms: List[bool]):
+	def __init__(self, truth_ms: Union[List[bool], Tuple[bool]]):
 		self.truth_ms = truth_ms[:]
 		self.dims = round(math.log(len(truth_ms), 2))
 
@@ -56,3 +71,7 @@ class BoolFunction:
 
 	def __repr__(self):
 		return str(self.truth_ms)
+
+
+if __name__ == '__main__':
+	print(bin(bin_vec_to_mask((0, 1, 1, 0, 1)))[2:])

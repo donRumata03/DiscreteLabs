@@ -33,6 +33,7 @@ def mass_check():
 	for f in functions:
 		print(str(f) + ": ")
 		check_bf_properties(f)
+		print()
 
 
 def depends_on_at_least_three_not_lies_in_any():
@@ -62,9 +63,9 @@ def depends_on_at_least_x_lies_in_all(x, collect_down_from=4):
 def only_in_x_class():
 	fs = get_all_functions(3)
 
-	for cls_name, cls_checker in property_dict:
+	for cls_name, cls_checker in post_properties:
 		print(cls_name, ":")
-		other_class_checkers = [other_cls[1] for other_cls in property_dict if other_cls[0] != cls_name]
+		other_class_checkers = [other_cls[1] for other_cls in post_properties if other_cls[0] != cls_name]
 		succ = False
 		for f in fs:
 			if cls_checker(f) and not any([c(f) for c in other_class_checkers]):
@@ -77,7 +78,7 @@ def only_in_x_class():
 		for f in fs:
 			if cls_checker(f) and sum([c(f) for c in other_class_checkers]) == 1 and not is_preserving_one(f) and not is_preserving_zero(f):
 				print("Almost: ", repr(f))
-				for name, ch in property_dict:
+				for name, ch in post_properties:
 					if name != cls_name and ch(f):
 						print(name)
 
@@ -90,9 +91,9 @@ def only_in_x_class():
 def not_lies_only_in_x_class():
 	fs = get_all_functions(3)
 
-	for cls_name, cls_checker in property_dict:
+	for cls_name, cls_checker in post_properties:
 		print(cls_name, ":")
-		other_class_checkers = [other_cls[1] for other_cls in property_dict if other_cls[0] != cls_name]
+		other_class_checkers = [other_cls[1] for other_cls in post_properties if other_cls[0] != cls_name]
 		succ = False
 		for f in fs:
 			if not cls_checker(f) and all([c(f) for c in other_class_checkers]):
@@ -120,14 +121,19 @@ def lin_mon():
 
 
 def play_games_with_bool_functions():
-	# mass_check()
+	# print(bin_vec_to_mask(inverse_bin_vec(to_bin_vec(1, 2))))
+
+	mass_check()
 	# not_lies_only_in_x_class()
 	# only_in_x_class()
 	# depends_on_at_least_three_not_lies_in_any()
-	depends_on_at_least_x_lies_in_all(1)
+	# depends_on_at_least_x_lies_in_all(1)
 	# lin_mon()
+
+	# check_dep_on_all_amount_dynamic()
 
 	# 2 ** (2 ** i) -
 
-
+if __name__ == '__main__':
+	play_games_with_bool_functions()
 
