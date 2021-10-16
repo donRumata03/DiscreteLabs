@@ -151,6 +151,9 @@ impl Scheme {
 	}
 
 	fn compute(&self, var_values: &BitSet) -> bool {
+		// println!("{}: ", var_values.mask);
+
+
 		let mut element_results = vec![None; self.nodes.len()];
 
 		for (i, node) in self.nodes.iter().enumerate() {
@@ -158,11 +161,12 @@ impl Scheme {
 				Node::Variable(v) => element_results[i] = Some(var_values.get(v.var_index)),
 				Node::Function(func_node) => {
 					// Glue inputs:
-					for j in 0..i {
-						print!("{}", element_results[j].unwrap() as usize);
-					} println!();
+					// for j in 0..i {
+					// 	print!("{}", element_results[j].unwrap() as usize);
+					// }
+
 					let args: Vec<bool> =
-						func_node.inputs.iter().map(|i| element_results[*i].unwrap()).rev().collect();
+						func_node.inputs.iter().map(|i| element_results[*i].unwrap()).collect();
 
 					let func_argument_bitmask: usize = to_bitmask(&args);
 
@@ -238,9 +242,10 @@ fn main() {
 			}
 
 			// Read truth table:
-			let mut truth_table = Vec::new();
-			for _ in 0..2_usize.pow(m_i as u32) {
-				truth_table.push(scanner.token::<usize>() != 0);
+			let tt_size = 2_usize.pow(m_i as u32);
+			let mut truth_table = vec![false; tt_size];
+			for i in 0..tt_size {
+				truth_table[reverse_bitmask(i, m_i)] = scanner.token::<usize>() != 0;
 			}
 
 			nodes.push(Node::Function(FuncNode {
@@ -254,6 +259,8 @@ fn main() {
 		nodes
 	};
 
+	// println!("{}", scheme.compute(&BitSet::from(0b111)));
+
 	// Depth:
 	println!("{}", scheme.get_depth(None));
 
@@ -261,7 +268,7 @@ fn main() {
 	let tt_size = 2_usize.pow(var_counter as u32);
 	let mut res_string = String::with_capacity(tt_size);
 	for msk in 0..tt_size {
-		res_string.push(if scheme.compute(&BitSet::from(msk)) {'1'} else { '0' });
+		res_string.push(if scheme.compute(&BitSet::from(reverse_bitmask(msk, var_counter))) {'1'} else { '0' });
 	}
 	println!("{}", res_string);
 }
