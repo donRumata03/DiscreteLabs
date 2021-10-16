@@ -24,12 +24,14 @@ impl BitSet {
 	}
 
 
-	fn set(&mut self, position: usize, value: bool) {
-		if value {
-			self.set_true(position);
-		} else {
-			self.set_false(position);
-		}
+	fn set_to(&mut self, position: usize, value: bool) {
+		// if value {
+		// 	self.set_true(position);
+		// } else {
+		// 	self.set_false(position);
+		// }
+
+		self.mask = (self.mask & !(1 << position)) | (value << position);
 	}
 
 	fn set_true(&mut self, position: usize) {
@@ -55,7 +57,7 @@ fn reverse_bitmask(bitmask: usize, dims: usize) -> usize {
 	let mut res = BitSet::from(0);
 
 	for i in 0..dims {
-		res.set(dims - i - 1, bitmask & (1 << i) != 0);
+		res.set_to(dims - i - 1, bitmask & (1 << i) != 0);
 	}
 
 	res.mask
