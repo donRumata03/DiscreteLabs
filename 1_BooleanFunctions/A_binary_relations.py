@@ -7,17 +7,13 @@ def is_anti_reflexive(r):
 def is_symmetric(r):
 	for i in range(len(r)):
 		for j in range(len(r)):
-			if i == j:
-				continue
-			if r[i][j] != r[j][i]:
+			if r[i][j] and not r[j][i]:
 				return False
 	return True
 
 def is_anti_symmetric(r):
 	for i in range(len(r)):
-		for j in range(len(r)):
-			if i == j:
-				continue
+		for j in range(i + 1, len(r)):
 			if r[i][j] == r[j][i]:
 				return False
 	return True
@@ -33,13 +29,15 @@ def is_transitive(r):
 
 
 def compose_relations(rl, rr):
-	res = []
-	for i in range(len(rl)):
-		res.append([False] * len(rl))
-		for j in range(len(rl)):
-			for k in range(len(rl)):
+	n = len(rl)
+	res = [[False] * n for _ in range(n)]
+
+	for i in range(n):
+		for j in range(n):
+			for k in range(n):
 				if rl[i][k] and rr[k][j]:
 					res[i][j] = True
+					break
 
 	return res
 
