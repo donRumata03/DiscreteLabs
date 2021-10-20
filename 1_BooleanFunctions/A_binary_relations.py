@@ -6,23 +6,26 @@ def is_anti_reflexive(r):
 
 def is_symmetric(r):
 	for i in range(len(r)):
-		for j in range(len(r)):
-			if r[i][j] and not r[j][i]:
+		for j in range(i + 1, len(r)):
+			if (r[i][j] and not r[j][i]) or (not r[i][j] and r[j][i]):
 				return False
 	return True
+
 
 def is_anti_symmetric(r):
 	for i in range(len(r)):
 		for j in range(i + 1, len(r)):
-			if r[i][j] == r[j][i]:
+			if r[i][j] and r[j][i]:
 				return False
 	return True
 
 
 def is_transitive(r):
-	for i in range(len(r)):
-		for j in range(len(r)):
-			for k in range(len(r)):
+	n = len(r)
+
+	for i in range(n):
+		for j in range(n):
+			for k in range(n):
 				if r[i][j] and r[j][k] and not r[i][k]:
 					return False
 	return True
