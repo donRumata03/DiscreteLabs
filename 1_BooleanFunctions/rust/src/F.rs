@@ -45,6 +45,7 @@ impl<R: io::BufRead> Scanner<R> {
 
 /// ////////////////////////////////////////////////////
 
+#[derive(Clone)]
 enum VarState {
 	Nothing,
 	Direct,
@@ -52,7 +53,47 @@ enum VarState {
 }
 
 fn has_resolutions(horn_form: Vec<Vec<VarState>>) -> bool {
+	let clauses_n = horn_form.len();
+	let var_n = horn_form.first().unwrap().len();
 
+	let x: Option<Vec<i32>> = Some(Vec::new());
+
+	// let mut temp_expr = horn_form.iter().clone().map(|c| Some(*c.clone())).collect::<Vec<Option<Vec<VarState>>>>();
+
+	let mut var_values = vec![None; var_n];
+
+	loop {
+		let lonely_var_clauses: Vec<&Vec<VarState>> = horn_form.iter().filter(|&disjunction|
+			disjunction.iter().map(|element| if let VarState::Nothing = element {0} else {1}).sum::<usize>() == 1
+		).collect();
+
+		if lonely_var_clauses.is_empty() {
+			return true;
+		} else {
+			for l_var_clause in lonely_var_clauses {
+				let var_index = l_var_clause.iter().take_while(|&var_state|
+                   if let VarState::Nothing = var_state {true} else {false}
+				).count();
+
+				let var_state = l_var_clause.iter().filter(|vs|
+					!matches!(vs, VarState::Nothing)
+				).next().unwrap();
+
+				let required_value = matches!(var_state, VarState::Direct);
+
+				match var_values[var_index] {
+					Some(v) => if v != required_value { return false; },
+					None => { var_values[var_index] = Some(required_value); }
+				}
+			}
+
+		}
+
+	}
+
+	println!("dfdf");
+
+	return false;
 }
 
 
@@ -73,8 +114,8 @@ fn main() {
 		for var_index in 0..n {
 			this_clause.push(match scanner.token::<isize>() {
 				1 => VarState::Direct,
-				-1 => VarState::Inverted,
-				0 => VarState::Nothing,
+				0 => VarState::Inverted,
+				-1 => VarState::Nothing,
 				_ => panic!()
 			});
 		}
