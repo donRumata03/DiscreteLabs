@@ -14,4 +14,12 @@ path = "src/a_huffman.rs"
 name = "b_burrows"
 path = "src/b_burrows.rs"
 
+[[bin]]
+name = "c_inverse_burrows"
+path = "src/c_inverse_burrows.rs"
+
+[[bin]]
+name = "d_move_to_front"
+path = "src/d_move_to_front.rs"
+
 [dependencies]
