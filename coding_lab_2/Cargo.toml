@@ -10,4 +10,8 @@ edition = "2018"
 name = "a_huffman"
 path = "src/a_huffman.rs"
 
+[[bin]]
+name = "b_burrows"
+path = "src/b_burrows.rs"
+
 [dependencies]
