@@ -18,9 +18,7 @@ use {
         fs::{File, OpenOptions},
     }
 };
-use std::ptr::{null, null_mut};
-use std::alloc::{System, Layout, GlobalAlloc};
-use std::collections::{VecDeque, HashMap, BinaryHeap};
+use std::collections::{HashMap, BinaryHeap};
 use std::cmp::Ordering;
 
 
@@ -257,32 +255,24 @@ enum HuffmanTreeNodeStructureData {
     Connector { left: Box<HuffmanTreeNode>, right: Box<HuffmanTreeNode> }
 }
 
-#[derive(Ord, PartialOrd, PartialEq, Eq)]
+#[derive(PartialEq, Eq)]
 struct HuffmanTreeNode {
     freq: usize,
     structure_data: HuffmanTreeNodeStructureData
 }
 
-// impl Eq for HuffmanTreeNode {}
-//
-// impl PartialEq<Self> for HuffmanTreeNode {
-//     fn eq(&self, other: &Self) -> bool {
-//         todo!()
-//     }
-// }
-//
-//
-// impl PartialOrd<Self> for HuffmanTreeNode {
-//     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-//         Some(self.freq.cmp(&other.freq).reverse())
-//     }
-// }
-//
-// impl Ord for HuffmanTreeNode {
-//     fn cmp(&self, other: &Self) -> Ordering {
-//         partial
-//     }
-// }
+
+impl PartialOrd<Self> for HuffmanTreeNode {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.freq.cmp(&other.freq).reverse())
+    }
+}
+
+impl Ord for HuffmanTreeNode {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.partial_cmp(other).unwrap()
+    }
+}
 
 fn count_symbol_freqs(text: &[usize]) -> HashMap<usize, usize> {
     let mut res = HashMap::new();
@@ -312,7 +302,7 @@ fn indexes_of_two_smallest<T: Ord>(array: &[T]) -> (Option<usize>, Option<usize>
     (smallest, second_smallest)
 }
 
-fn build_huffman_tree(freqs: HashMap<usize, usize>) -> HuffmanTreeNode {
+fn build_huffman_tree(freqs: &HashMap<usize, usize>) -> HuffmanTreeNode {
     // let freqs = count_symbol_freqs(text);
 
     let mut node_pool = BinaryHeap::new();
@@ -343,6 +333,29 @@ fn build_huffman_tree(freqs: HashMap<usize, usize>) -> HuffmanTreeNode {
     node_pool.into_iter().next().unwrap()
 }
 
+fn dump_tree_impl(tree: &HuffmanTreeNode, to: &mut HashMap<usize, Vec<bool>>, code_prefix: &mut Vec<bool>) {
+    match &tree.structure_data {
+        HuffmanTreeNodeStructureData::Leaf(value) => {
+            to.insert(*value, code_prefix.clone());
+        }
+        HuffmanTreeNodeStructureData::Connector { left, right } => {
+            code_prefix.push(false);
+            dump_tree_impl(left, to, code_prefix);
+            *(code_prefix.last_mut().unwrap()) = true;
+            dump_tree_impl(right, to, code_prefix);
+            code_prefix.pop();
+        }
+    };
+}
+
+fn dump_tree(tree: &HuffmanTreeNode) -> HashMap<usize, Vec<bool>> {
+    let mut coding = HashMap::new();
+
+    let mut code_prefix = Vec::new();
+    dump_tree_impl(tree, &mut coding, &mut code_prefix);
+
+    coding
+}
 
 fn main() {
     let mut input = InputReader::new();
@@ -356,13 +369,25 @@ fn main() {
         data.push(input.next());
     }
 
-    let tree = build_huffman_tree(count_symbol_freqs(&data));
+    // let freqs = count_symbol_freqs(&data);
+    let freqs = data.iter().enumerate().map(|(i, &v)| (i, v)).collect();
+    // println!("{:?}", freqs);
 
-    let mut coding = HashMap::new();
-    
+    let tree = build_huffman_tree(&freqs);
+    let converter = dump_tree(&tree);
+
+    let mut sum_len = 0_usize;
+    for (k, v) in converter.iter() {
+        let bin_string = v.iter().map(|&v| if v {'1'} else {'0'}).collect::<String>();
+        // output.println(format!("{} {}", k, bin_string));
+        sum_len += v.len() * freqs[k];
+    }
+
+    output.println(sum_len);
+
 }
 
-/**
+/*
 10
 1 2 3 4 5 6 7 8 9 10
 */
