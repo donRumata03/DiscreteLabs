@@ -27,6 +27,10 @@ path = "src/d_move_to_front.rs"
 
 
 [[bin]]
+name = "g_arpiphmetic_encoding"
+path = "src/g_arpiphmetic_encoding.rs"
+
+[[bin]]
 name = "i_hamming"
 path = "src/i_hamming.rs"
 
