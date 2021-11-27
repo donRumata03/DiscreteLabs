@@ -270,7 +270,7 @@ fn hamming_encode(source: &Vec<bool>) -> Vec<bool> {
 		}
 		i += 1;
 	}
-	println!("{} -> {}", source.len(), res.len());
+	// println!("{} -> {}", source.len(), res.len());
 
 	for j in 1..=res.len() {
 		if j.is_power_of_two() {
@@ -286,8 +286,28 @@ fn hamming_encode(source: &Vec<bool>) -> Vec<bool> {
 	res
 }
 
-fn hamming_decode() {
+fn hamming_decode(encoded: &Vec<bool>) -> Vec<bool> {
+	// First - canonicalize encoded
+	let mut incorrect_bit_index = 0_usize;
+	for i in 0..encoded.len() {
+		if (i + 1).is_power_of_two() {
+			let bitmask = i + 1;
+			let xor = encoded.iter().enumerate()
+				.map(|(i, &v)| (((i + 1) & bitmask) != 0) && v)
+				.fold(false, |x, y| x ^ y);
 
+			if xor != false { incorrect_bit_index |= (i + 1); }
+		}
+	}
+
+	// Remove control bits, inverse incorrect one if exists (incorrect_bit_index == 0 <=> it doesn't match any)
+	encoded.iter().enumerate()
+		.filter_map(|(i, &v)|
+			if (i + 1).is_power_of_two() {None}
+			else {
+				Some(if (i + 1) == incorrect_bit_index { !v } else {v})
+			}
+		).collect()
 }
 
 fn read_line() -> String {
@@ -299,6 +319,29 @@ fn read_line() -> String {
 
 	input_string
 }
+trait ToBoolVector {
+	fn ascii_as_bool_vector(&self) -> Vec<bool>;
+}
+impl ToBoolVector for String {
+	fn ascii_as_bool_vector(&self) -> Vec<bool> {
+		self.chars().map(|c| match c {
+			'0' => false,
+			'1' => true,
+			_ => panic!()
+		}).collect()
+	}
+}
+
+trait BoolVecToString {
+	fn to_string(&self) -> String;
+}
+impl BoolVecToString for Vec<bool> {
+	fn to_string(&self) -> String {
+		self.iter().map(
+			|&v| if v { '1' } else {'0'}
+		).collect::<String>()
+	}
+}
 
 fn main() {
 	// let mut input = InputReader::new();
@@ -309,22 +352,18 @@ fn main() {
 	match mode {
 		1 => {
 			let string_for_encoding = read_line();
-			let bit_vec = string_for_encoding.chars().map(|c| match c {
-				'0' => false,
-				'1' => true,
-				_ => panic!()
-			}).collect();
+			let bit_vec = string_for_encoding.ascii_as_bool_vector();
 
 			let encoded = hamming_encode(&bit_vec);
-			let encoded = encoded.iter().map(
-				|&v| if v { '1' } else {'0'}
-			).collect::<String>();
+			let encoded = encoded.to_string();
 
 			output.println(encoded);
 		},
 		2 => {
 			let string_for_decoding = read_line();
-			panic!();
+			let bool_vec = string_for_decoding.ascii_as_bool_vector();
+			let decoded = hamming_decode(&bool_vec);
+			output.println(decoded.to_string());
 		},
 		_ => panic!()
 	}
@@ -332,6 +371,22 @@ fn main() {
 }
 
 /*
+
+
 10
-1 2 3 4 5 6 7 8 9 10
+11100
+11000 -> 00
+
+______________________________
+100
+111000
+110000
+
+______________________________
+100011101010110
+
+
+00100001111010100110
+
+00100001101010100110
 */
