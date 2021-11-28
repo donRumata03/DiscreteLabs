@@ -28,7 +28,7 @@ path = "src/d_move_to_front.rs"
 
 [[bin]]
 name = "f_lzw_encode"
-path = "src/f_lzw_encode.rs"
+path = "src/e_lzw_encode.rs"
 
 [[bin]]
 name = "g_arpiphmetic_encoding"
