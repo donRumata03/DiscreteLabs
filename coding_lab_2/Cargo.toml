@@ -22,13 +22,13 @@ path = "src/c_inverse_burrows.rs"
 name = "d_move_to_front"
 path = "src/d_move_to_front.rs"
 
-
-
-
+[[bin]]
+name = "e_lzw_encode"
+path = "src/e_lzw_encode.rs"
 
 [[bin]]
-name = "f_lzw_encode"
-path = "src/e_lzw_encode.rs"
+name = "f_lzw_decode"
+path = "src/f_lzw_decode.rs"
 
 [[bin]]
 name = "g_arpiphmetic_encoding"
