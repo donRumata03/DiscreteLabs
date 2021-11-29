@@ -32,7 +32,7 @@ path = "src/f_lzw_decode.rs"
 
 [[bin]]
 name = "g_arpiphmetic_encoding"
-path = "src/g_arpiphmetic_encoding.rs"
+path = "src/g_arpithmetic_encoding.rs"
 
 [[bin]]
 name = "i_hamming"
