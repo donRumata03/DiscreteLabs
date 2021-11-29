@@ -25,8 +25,13 @@ def discrete_binary_search(pred: Callable, l, r):
     return l, r
 
 
-def arithmetic_encode_to_fraction(fr) -> Fraction:
-    pass
+def arithmetic_encode_to_fraction(char_seq, fr) -> Fraction:
+    current_segment = SegmentExclusive(Fraction(0), Fraction(1))
+
+    for c in char_seq:
+        current_segment = construct_interval_seq(current_segment, fr)[c]
+
+    return current_segment
 
 
 def segment_to_smallest_bitstring(segment: SegmentExclusive):
@@ -72,12 +77,11 @@ def segment_to_smallest_fraction(segment: SegmentExclusive) -> (int, int):
     return try_get_p_for_q(final_q), final_q
 
 
-
-def construct_interval_seq(l: Fraction, r: Fraction, fr: List[int]) -> List[SegmentExclusive]:
+def construct_interval_seq(segment: SegmentExclusive, fr: List[int]) -> List[SegmentExclusive]:
     res = []
-    atomic_step = Fraction(r - l, sum(fr))
+    atomic_step = Fraction(segment.r - segment.l, sum(fr))
 
-    current_border = l
+    current_border = segment.l
     for f in fr:
         next_border = current_border + atomic_step * f
         res.append(SegmentExclusive(current_border, next_border))
@@ -98,9 +102,12 @@ input_chars = list(map(lambda c: ord(c) - ord('a'), input()))
 
 c = Counter(input_chars)
 freqs = [c[i] for i in range(n)]
+print(n)
+print(*freqs)
 
-
-
+ans_segment = arithmetic_encode_to_fraction(input_chars, freqs)
+# print(f"Resultant segment: [{ans_segment.l}), [{ans_segment.r})")
+print(segment_to_smallest_bitstring(ans_segment))
 
 """
 
