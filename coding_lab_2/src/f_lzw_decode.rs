@@ -288,24 +288,31 @@ impl BoolVecToString for Vec<bool> {
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
 fn lzw_decode(encoded: &Vec<usize>) -> Vec<usize> {
-	let mut dict = (0..26).into_iter().map(|c| vec![c]).collect::<Vec<_>>();
+	let mut dict = (0..26_usize).into_iter().map(|c| vec![c]).collect::<Vec<_>>();
 	let mut res = Vec::new();
 
 	for (i, &this_code) in encoded.iter().enumerate() {
+		// if dict.len() <= this_code { loop {} }
+
 		if i != encoded.len() - 1 {
-			let this_seq = &dict[this_code];
-
 			let next_code = encoded[i + 1];
-			let next_seq = &dict[next_code];
 
-			// Buffer has been freed =>
-			// next seq's last symbol placed after this seq doesn't exist in the dictionary and is added:
+			// if dict.len() == next_code { loop {} }
+			// let next_seq = &;
 
+			// Buffer has been freed exactly at this position =>
+			// 1) Phrase here definitely has corresponding error code
+			// 2) Next seq's last symbol placed after this seq doesn't exist in the dictionary
+			//    and is added to it at buffer flush
+
+			let next_seq_start = if dict.len() != next_code { dict[next_code].first().unwrap() } else { dict[this_code].first().unwrap() };
+			let dict_addition = dict[this_code].iter().chain(once(next_seq_start)).map(|c| *c).collect();
+			dict.push(dict_addition);
 		}
+
+		// Just add this seq to answer here:
+		res.extend(dict[this_code].iter());
 	}
-
-	if !buffer.is_empty() { res.push(dict.iter().position(|v| *v == buffer).unwrap()) };
-
 
 	res
 }
@@ -329,3 +336,10 @@ fn main() {
 	let ans_strings = lzw_decoded.iter().map(|&alpha_code| (alpha_code as u8 + 'a' as u8) as char).collect::<String>();
 	println!("{}", ans_strings);
 }
+
+/*
+
+6
+0 1 0 2 26 0
+
+ */
