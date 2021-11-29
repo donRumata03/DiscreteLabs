@@ -289,13 +289,18 @@ impl BoolVecToString for Vec<bool> {
 
 fn lzw_decode(encoded: &Vec<usize>) -> Vec<usize> {
 	let mut dict = (0..26).into_iter().map(|c| vec![c]).collect::<Vec<_>>();
-	let mut buffer = Vec::new();
 	let mut res = Vec::new();
 
-	for (i, &code) in encoded.iter().enumerate() {
+	for (i, &this_code) in encoded.iter().enumerate() {
 		if i != encoded.len() - 1 {
+			let this_seq = &dict[this_code];
+
 			let next_code = encoded[i + 1];
-			let next_seq = dict[next_code];
+			let next_seq = &dict[next_code];
+
+			// Buffer has been freed =>
+			// next seq's last symbol placed after this seq doesn't exist in the dictionary and is added:
+
 		}
 	}
 
