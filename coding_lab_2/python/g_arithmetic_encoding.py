@@ -30,10 +30,12 @@ def arithmetic_encode_to_fraction(fr) -> Fraction:
 
 
 def segment_to_smallest_bitstring(segment: SegmentExclusive):
-    pass
+    p, q = segment_to_smallest_fraction(segment)
+    valuable_bits = bin(p)[2:]
+    return "0" * (q - len(valuable_bits)) + valuable_bits
 
 
-def segment_to_smallest_fraction(segment: SegmentExclusive):
+def segment_to_smallest_fraction(segment: SegmentExclusive) -> (int, int):
     # To find smallest q such that 2^q € [l, r) — use binary search (float log wouldn't work)
 
     # For q there exists proper fraction => for q' > q — it exists, too
@@ -84,10 +86,10 @@ def construct_interval_seq(l: Fraction, r: Fraction, fr: List[int]) -> List[Segm
     return res
 
 
-print(segment_to_smallest_fraction(SegmentExclusive(
-    Fraction(355, 1000),
-    Fraction(2, 5)
-)))
+# print(segment_to_smallest_bitstring(SegmentExclusive(
+#     Fraction(9, 10),
+#     Fraction(95, 100)
+# )))
 
 
 n = int(input())
