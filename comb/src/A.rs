@@ -17,15 +17,22 @@ trait CombinatorialObject<T> {
 }
 
 /// `prefix` initially has some state that will be considered
-fn generate_all<T, C>(prefix: &mut C, sorted_alphabet: Vec<u64>, answer_container: &mut Vec<T>)
+fn generate_all<T, C>(prefix: &mut C, sorted_alphabet: &Vec<u64>, answer_container: &mut Vec<T>)
     where C: CombinatorialObject<T>
 {
     if prefix.is_self_contained() {
         answer_container.push(prefix.clone())
     }
+
+    for c in sorted_alphabet.iter().filter(|&c| prefix.can_add(c)) {
+        prefix.push(c);
+        generate_all(prefix, sorted_alphabet, answer_container);
+        prefix.pop();
+    }
 }
 
 
+#[derive(Clone, Debug)]
 struct Sequence {
     len : usize,
     states : u64,
