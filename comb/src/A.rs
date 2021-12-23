@@ -7,17 +7,22 @@ trait CombinatorialObject<T> {
     fn count_successors(&self) -> u64;
     fn push(&mut self, element: T);
     fn pop(&mut self) -> T;
+    fn view_sorted_alphabet(&self) -> &Vec<T>;
+    fn possible_direct_successors(&self) -> Vec<T> {
+        self.view_sorted_alphabet().iter().filter(|&e| self.can_add(e)).collect()
+    }
 }
 
 struct Sequence {
     len : usize,
     states : u64,
-    data: Vec<u64>
+    data: Vec<u64>,
+    sorted_alphabet: Vec<u64>
 }
 
 impl Sequence {
     pub fn new(len: usize, states: u64) -> Self {
-        Sequence { len, states, data: Vec::with_capacity(len) }
+        Sequence { len, states, data: Vec::with_capacity(len), sorted_alphabet: (1..=states).collect() }
     }
 }
 
@@ -41,6 +46,10 @@ impl CombinatorialObject<u64> for Sequence {
 
     fn pop(&mut self) -> u64 {
         self.data.pop().unwrap()
+    }
+
+    fn view_sorted_alphabet(&self) -> &Vec<u64> {
+        &self.sorted_alphabet
     }
 }
 
