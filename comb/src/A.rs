@@ -1,5 +1,4 @@
-
-
+use std::fmt::Debug;
 
 trait CombinatorialObject<T> {
     fn is_self_contained(&self) -> bool;
@@ -17,15 +16,21 @@ trait CombinatorialObject<T> {
 }
 
 /// `prefix` initially has some state that will be considered
-fn generate_all<T, C>(prefix: &mut C, sorted_alphabet: &Vec<u64>, answer_container: &mut Vec<T>)
-    where C: CombinatorialObject<T>
+fn generate_all<T, C>(prefix: &mut C, sorted_alphabet: &Vec<T>, answer_container: &mut Vec<C>)
+    where C: CombinatorialObject<T> + Clone + Debug,
+            T: Clone
 {
+    println!("{:?}", prefix);
+
     if prefix.is_self_contained() {
         answer_container.push(prefix.clone())
     }
 
-    for c in sorted_alphabet.iter().filter(|&c| prefix.can_add(c)) {
-        prefix.push(c);
+    for c in sorted_alphabet.iter()/*.filter(|&c| prefix.can_add(c))*/ {
+        if !prefix.can_add(c) {
+            continue;
+        }
+        prefix.push(c.clone());
         generate_all(prefix, sorted_alphabet, answer_container);
         prefix.pop();
     }
@@ -51,12 +56,12 @@ impl CombinatorialObject<u64> for Sequence {
     }
 
     fn can_add(&self, _: &u64) -> bool {
-        self.len < self.data.len()
+        self.data.len() < self.len
     }
 
     fn count_successors(&self) -> u64 {
-        return ((self.len - self.data.len()) as u64)
-            .pow(self.states as u32);
+        return (self.states as u64)
+            .pow((self.len - self.data.len()) as u32);
     }
 
     fn push(&mut self, element: u64) {
@@ -73,5 +78,11 @@ impl CombinatorialObject<u64> for Sequence {
 }
 
 fn main() {
-    println!("Hello, world!");
+    let mut pref = Sequence::new(3, 2);
+    let mut ans = Vec::with_capacity(pref.count_successors() as usize);
+    let alphabet: Vec<u64> = (0..=1).collect();
+
+    generate_all(&mut pref, &alphabet, &mut ans);
+
+    println!("{:?}", ans);
 }
