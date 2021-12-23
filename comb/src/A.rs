@@ -7,22 +7,34 @@ trait CombinatorialObject<T> {
     fn count_successors(&self) -> u64;
     fn push(&mut self, element: T);
     fn pop(&mut self) -> T;
-    fn view_sorted_alphabet(&self) -> &Vec<T>;
-    fn possible_direct_successors(&self) -> Vec<T> {
-        self.view_sorted_alphabet().iter().filter(|&e| self.can_add(e)).collect()
+
+    // TODO: separate this to concept of static data for all objects of this subclass
+    // TODO: and state-tracker object which can go forward and backward
+    // fn view_sorted_alphabet(&self) -> &Vec<T>;
+    // fn possible_direct_successors(&self) -> Vec<T> {
+    //     self.view_sorted_alphabet().iter().filter(|&e| self.can_add(e)).collect()
+    // }
+}
+
+/// `prefix` initially has some state that will be considered
+fn generate_all<T, C>(prefix: &mut C, sorted_alphabet: Vec<u64>, answer_container: &mut Vec<T>)
+    where C: CombinatorialObject<T>
+{
+    if prefix.is_self_contained() {
+        answer_container.push(prefix.clone())
     }
 }
+
 
 struct Sequence {
     len : usize,
     states : u64,
-    data: Vec<u64>,
-    sorted_alphabet: Vec<u64>
+    data: Vec<u64>
 }
 
 impl Sequence {
     pub fn new(len: usize, states: u64) -> Self {
-        Sequence { len, states, data: Vec::with_capacity(len), sorted_alphabet: (1..=states).collect() }
+        Sequence { len, states, data: Vec::with_capacity(len), /*sorted_alphabet: (1..=states).collect()*/ }
     }
 }
 
@@ -48,9 +60,9 @@ impl CombinatorialObject<u64> for Sequence {
         self.data.pop().unwrap()
     }
 
-    fn view_sorted_alphabet(&self) -> &Vec<u64> {
-        &self.sorted_alphabet
-    }
+    // fn view_sorted_alphabet(&self) -> &Vec<u64> {
+    //     &self.sorted_alphabet
+    // }
 }
 
 fn main() {
