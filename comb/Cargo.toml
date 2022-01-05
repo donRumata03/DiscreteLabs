@@ -9,4 +9,19 @@ edition = "2018"
 name = "a"
 path = "src/A.rs"
 
+
+[[bin]]
+name = "task_7"
+path = "src/task_7.rs"
+
+[[bin]]
+name = "task_13"
+path = "src/task_13.rs"
+
+[[bin]]
+name = "task_15"
+path = "src/task_15.rs"
+
+
+
 [dependencies]
