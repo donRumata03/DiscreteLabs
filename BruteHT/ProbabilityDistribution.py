@@ -56,9 +56,11 @@ class ProbabilityDistribution:
 def plot_generated(f, count):
 	p = ProbabilityDistribution.generate(f, count)
 	print(p.samples)
+	print(f"Expected value: {p.expected_value()}")
+	print(f"Dispersion: {p.dispersion()}")
 	p.plot(plt)
 	plt.show()
 
 
 if __name__ == '__main__':
-	plot_generated(lambda: steps_until_pattern(fair_coin, [1]))
+	plot_generated(lambda: steps_until_pattern(fair_coin, [1]), 1000)
