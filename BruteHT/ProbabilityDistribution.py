@@ -1,3 +1,4 @@
+import random
 from dataclasses import dataclass
 from typing import Callable
 
@@ -12,10 +13,19 @@ from BruteHT.smoother import count_density
 def steps_until_pattern(function: Callable, pattern: list):
 	generated = []
 
-	while len(generated) < len(pattern) or generated[:-len(pattern)] != pattern:
+	while len(generated) < len(pattern) or generated[-len(pattern):] != pattern:
 		generated.append(function())
+		assert type(generated[-1]) == type(pattern[0])
 
 	return len(generated)
+
+
+def fair_coin():
+	return random.randint(0, 1)
+
+
+def unfair_coin(p):
+	return lambda: random.random() < p
 
 
 class ProbabilityDistribution:
@@ -31,7 +41,7 @@ class ProbabilityDistribution:
 
 	def dispersion(self):
 		e = self.expected_value()
-		return ProbabilityDistribution([(s - e)**2 for s in self.samples])\
+		return ProbabilityDistribution([(s - e) ** 2 for s in self.samples]) \
 			.expected_value()
 
 	def plot(self, plotter):
@@ -43,4 +53,4 @@ class ProbabilityDistribution:
 
 
 if __name__ == '__main__':
-	pass
+	print(steps_until_pattern(fair_coin, [0, 1, 1]))
