@@ -2,6 +2,8 @@ import random
 from dataclasses import dataclass
 from typing import Callable
 
+from matplotlib import pyplot as plt
+
 from BruteHT.smoother import count_density
 
 
@@ -45,12 +47,18 @@ class ProbabilityDistribution:
 			.expected_value()
 
 	def plot(self, plotter):
-		res = count_density(self.samples, 0.1, 200)
+		res = count_density(self.samples, 0.03, 200)
 		plotter.plot(
 			[x for (x, y) in res],
 			[y for (x, y) in res]
 		)
 
+def plot_generated(f, count):
+	p = ProbabilityDistribution.generate(f, count)
+	print(p.samples)
+	p.plot(plt)
+	plt.show()
+
 
 if __name__ == '__main__':
-	print(steps_until_pattern(fair_coin, [0, 1, 1]))
+	plot_generated(lambda: steps_until_pattern(fair_coin, [1]))
