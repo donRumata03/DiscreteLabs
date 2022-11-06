@@ -153,10 +153,16 @@ fn chromatic_polynomial_dummy(graph: &Graph) -> Polynomial {
 	}
 
 	// Otherwise, take an edge and apply the formula
-	let mut without_edge = graph.remove_edges_renumbered(&[0]);
+	// Find the vertex with the smallest degree
+	let smallest_degree_vertex = graph.edges.iter()
+		.enumerate()
+		.min_by_key(|(_, edges)| edges.len())
+		.unwrap().0;
+	let edge_index = graph.edges[smallest_degree_vertex][0].edge_index; // It's guaranteed to be non-empty because graph is connected => doesn't contain isolated vertexes
+	let mut without_edge = graph.remove_edges_renumbered(&[edge_index]);
 	assert_eq!(without_edge.edges(), graph.edges() - 1);
 
-	let pulled = graph.pull_edge(0);
+	let pulled = graph.pull_edge(edge_index);
 	assert!(pulled.vertexes() == graph.vertexes() - 1);
 
 	return chromatic_polynomial(&without_edge) - chromatic_polynomial(&pulled);
