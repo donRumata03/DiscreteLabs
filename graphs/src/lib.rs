@@ -32,6 +32,9 @@ pub use self::scanner::*;
 pub mod graph;
 pub use self::graph::*;
 
+pub mod dfs;
+pub use self::dfs::*;
+
 
 pub fn print_vec<T: Display>(vec: &Vec<T>) {
 	println!("{}", vec.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(" "));
