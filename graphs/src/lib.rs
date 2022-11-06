@@ -27,22 +27,11 @@ use std::fmt::Formatter;
 use std::collections::hash_map::Entry;
 
 pub mod scanner;
-pub use scanner::*;
+pub use self::scanner::*;
 
 pub mod graph;
-pub use graph::*;
+pub use self::graph::*;
 
-pub mod dfs;
-pub use dfs::*;
-
-pub mod sat;
-pub use sat::*;
-
-pub mod dsu;
-pub use dsu::*;
-
-pub mod mst;
-pub use mst::*;
 
 pub fn print_vec<T: Display>(vec: &Vec<T>) {
 	println!("{}", vec.iter().map(|x| x.to_string()).collect::<Vec<String>>().join(" "));
@@ -74,7 +63,6 @@ fn minmax<T: Ord>(a: T, b: T) -> (T, T) {
 	}
 }
 
-
 #[derive(Debug, Clone)]
 pub struct Decomposition {
 	pub elements: usize,
@@ -89,11 +77,11 @@ impl Decomposition {
 		debug_assert_eq!(elements, component_list.iter().flatten().max().map(|x| x + 1).unwrap_or_default(),
 		                 "Components should be indexed from 0 to n - 1 without gaps");
 
-		debug_assert_eq!(elements, HashSet::<usize>::from_iter(
-			component_list.iter()
+		debug_assert_eq!(elements, component_list.iter()
 				.flatten()
 				.cloned()
-		).len(), "There are duplicate vertexes in component list");
+				.collect::<HashSet<usize>>()
+			.len(), "There are duplicate vertexes in component list");
 
 		let mut component_map = vec![0; elements];
 		for (i, component) in component_list.iter().enumerate() {
@@ -132,4 +120,3 @@ impl Decomposition {
 		return self.component_map[vertex_index];
 	}
 }
-
