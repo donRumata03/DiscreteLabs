@@ -1,3 +1,4 @@
+use std::fmt::Debug;
 use crate::*;
 
 
@@ -31,12 +32,30 @@ pub struct WeightedGraph<T> {
 }
 pub type Graph = WeightedGraph<()>;
 
-impl<T: Clone + Copy> WeightedGraph<T> {
+impl<T: Clone + Copy + Debug> WeightedGraph<T> {
 	pub fn new(n: usize) -> Self {
 		Self {
 			edges: vec![Vec::new(); n],
 			total_edges: 0,
 		}
+	}
+
+	pub fn validate_compact_enumeration(&self) {
+		// Check that all edges are enumerated from 0 to n - 1 without gaps
+		for (i, edges) in self.edges.iter().enumerate() {
+			for edge in edges {
+				debug_assert!(edge.edge_index < self.total_edges, "Edge index is out of bounds");
+			}
+		}
+
+		// Check that all numbers from 0 to total_edges - 1 are present
+		let mut present = vec![false; self.total_edges];
+		for edges in self.edges.iter() {
+			for edge in edges {
+				present[edge.edge_index] = true;
+			}
+		}
+		debug_assert!(present.iter().all(|&x| x), "Not all edge indexes are used");
 	}
 
 	pub fn add_weighted_indexed_directed_edge(&mut self, from: usize, to: usize, edge_index: usize, weight: T) {
@@ -70,7 +89,9 @@ impl<T: Clone + Copy> WeightedGraph<T> {
 			removed_edges[*edge] = true;
 		}
 		for edges in &mut self.edges {
+			// self.total_edges -= edges.len();
 			edges.retain(|edge| !removed_edges[edge.edge_index]);
+			// self.total_edges += edges.len();
 		}
 		self.total_edges -= edges.len();
 	}
@@ -88,43 +109,9 @@ impl<T: Clone + Copy> WeightedGraph<T> {
 		}
 		reversed
 	}
-
-	/// Deduplicate edges
-	/// Edges are also renumerated (such that if `consider_inverse_edges_equal` is true,
-	/// straight and inverse edges will have the same index in the new graph)
-	pub fn deduplicated(&self, consider_inverse_edges_equal: bool) -> Self {
-		// Group edges by sorted pair of `end` and `to`
-		let double_ended_edges = self.edges.iter()
-			.enumerate()
-			.map(|(i, edges)| edges.iter().map(|edge| (i, edge.to, edge.edge_index, edge.weight.clone()))
-				.collect::<Vec<(usize, usize, usize, T)>>())
-			.flatten()
-			.collect();
-
-		let mut deduplicated = Self::new(self.vertexes());
-
-		for (new_index, ((from, to), _group)) in
-			group_by(&double_ended_edges,
-			         |&(from, to, index, weight)| if consider_inverse_edges_equal { minmax(from, to) } else { (from, to) })
-				.into_iter()
-				.enumerate()
-		{
-			// Straight edge
-			unimplemented!();
-			// deduplicated.add_weighted_indexed_directed_edge(from, to, new_index, weight);
-			// deduplicated.total_edges += 1;
-			// // Inverse edge
-			// if consider_inverse_edges_equal {
-			// 	deduplicated.add_weighted_indexed_directed_edge(to, from, new_index, weight);
-			// 	deduplicated.total_edges += 1;
-			// }
-		}
-
-		deduplicated
-	}
 }
 
-impl<T: Copy + Default + PartialEq> WeightedGraph<T> {
+impl<T: Copy + Default + PartialEq + Debug> WeightedGraph<T> {
 	pub fn from_weight_matrix(matrix: &Vec<Vec<T>>) -> Self {
 		let n = matrix.len();
 		let mut graph = Self::new(n);
@@ -177,9 +164,91 @@ impl WeightedGraph<()> {
 		}
 		graph
 	}
+
+
+	/// Deduplicate edges
+	/// Edges are also renumerated (such that if `consider_inverse_edges_equal` is true,
+	/// straight and inverse edges will have the same index in the new graph)
+	pub fn deduplicated(&self, consider_inverse_edges_equal: bool) -> Self {
+		// Group edges by sorted pair of `end` and `to`
+		let double_ended_edges = self.edges.iter()
+			.enumerate()
+			.map(|(i, edges)| edges.iter().map(|edge| (i, edge.to, edge.edge_index))
+				.collect::<Vec<(usize, usize, usize)>>())
+			.flatten()
+			.collect();
+
+		let mut deduplicated = Self::new(self.vertexes());
+
+		for (new_index, ((from, to), _group)) in
+		group_by(&double_ended_edges,
+		         |&(from, to, index)| if consider_inverse_edges_equal { minmax(from, to) } else { (from, to) })
+			.into_iter()
+			.enumerate()
+		{
+			// Straight edge
+			deduplicated.add_weighted_indexed_directed_edge(from, to, new_index, ());
+			deduplicated.total_edges += 1;
+			// Inverse edge
+			if consider_inverse_edges_equal {
+				deduplicated.add_weighted_indexed_directed_edge(to, from, new_index, ());
+			}
+		}
+
+		deduplicated.validate_compact_enumeration();
+		deduplicated
+	}
+
+
+	// Merges vertexes at the ends of edge `edge_index` into one vertex
+	pub fn pull_edge(&self, edge_index: usize) -> Self {
+		// Find edge's `from` and `to`
+		let (l, r) = sort_pair(self.edges.iter()
+			.enumerate()
+			.find_map(|(from, edges)| edges.iter()
+				.find(|edge| edge.edge_index == edge_index)
+				.map(|edge| (from, edge.to)))
+			.unwrap());
+
+		let get_new_vertex_index = |index| {
+			if index < r {
+				index
+			} else if index == r {
+				l
+			} else {
+				index - 1
+			}
+		};
+
+		let mut pulled = Self::new(self.vertexes() - 1);
+
+		for (from, edges) in self.edges.iter().enumerate() {
+			for edge in edges {
+				if edge.edge_index == edge_index {
+					continue;
+				}
+				pulled.add_weighted_indexed_directed_edge(
+					get_new_vertex_index(from),
+					get_new_vertex_index(edge.to),
+					edge.edge_index,
+					edge.weight.clone()
+				);
+				pulled.total_edges += 1;
+			}
+		}
+
+		pulled.deduplicated(true)
+	}
+
+	pub fn remove_edges_renumbered(&self, edges: &[usize]) -> Self {
+		self.validate_compact_enumeration();
+		let mut removed = self.clone();
+		removed.remove_edges(edges);
+		removed.deduplicated(true)
+	}
 }
 
-impl<T: InputReadable + Clone + Copy> WeightedGraph<T> {
+impl<T: InputReadable + Clone + Copy + Debug> WeightedGraph<T> {
 	pub fn weighted_from_stdin(input_reader: &mut InputReader<Stdin>, directed: bool) -> Self {
 		let n = input_reader.next::<usize>();
 		let m = input_reader.next::<usize>();

@@ -1,7 +1,7 @@
 extern crate graphs;
 
 use std::cmp::Reverse;
-use graphs::{Decomposition, DFSSpace, Graph, InputReader, WeghtedEdge};
+use graphs::{Decomposition, DFSSpace, Graph, InputReader};
 
 use std::collections::{BinaryHeap, HashSet};
 use std::ops::Range;
@@ -22,14 +22,20 @@ impl Polynomial {
 		res
 	}
 
-	fn degree(&self) -> usize {
-		self.coefficients.len() - 1
-	}
-
 	fn strip(&mut self) {
-		while self.coefficients.len() > 1 && self.coefficients.last().unwrap() == &0 {
+		while self.coefficients.last() == Some(&0) {
 			self.coefficients.pop();
 		}
+	}
+
+	fn monomial(degree: usize, coefficient: i64) -> Self {
+		let mut coefficients = vec![0; degree + 1];
+		coefficients[degree] = coefficient;
+		Self::new(coefficients)
+	}
+
+	fn degree(&self) -> usize {
+		self.coefficients.len() - 1
 	}
 }
 
@@ -106,9 +112,11 @@ fn decompose_connected_components(graph: &Graph) -> (Decomposition, Vec<usize>, 
 
 	// For each vertex its index in its component
 	let mut index_in_component = vec![0; graph.vertexes()];
+	let mut component_ptr = vec![0; graph.vertexes()];
 	for (i, component) in decomposition.component_list.iter().enumerate() {
 		for &v in component {
-			index_in_component[v] = i;
+			index_in_component[v] = component_ptr[i];
+			component_ptr[i] += 1;
 		}
 	}
 	// By component index and index of vertex in component we can get the vertex's index in th initial graph:
@@ -121,9 +129,12 @@ fn decompose_connected_components(graph: &Graph) -> (Decomposition, Vec<usize>, 
 	for (u, edges) in graph.edges.iter().enumerate() {
 		for &e in edges {
 			let v = e.to;
+			if u > v {
+				continue;
+			}
 			let u_component = decomposition.component_of(u);
 			let v_component = decomposition.component_of(v);
-			if u_component != v_component {
+			if u_component == v_component {
 				component_graphs[u_component].add_undirected_edge(index_in_component[u], index_in_component[v]);
 			}
 		}
@@ -134,26 +145,30 @@ fn decompose_connected_components(graph: &Graph) -> (Decomposition, Vec<usize>, 
 
 
 /// Chromatic polynomial of a connected graph
-fn chromatic_polynom_connected(graph: &Graph) -> Polynomial {
-	unimplemented!()
+fn chromatic_polynomial_dummy(graph: &Graph) -> Polynomial {
+	// If the graph has no edges,
+	// then the chromatic polynomial is t^n
+	if graph.edges.iter().all(|e| e.is_empty()) {
+		return Polynomial::monomial(graph.vertexes(), 1);
+	}
+
+	// Otherwise, take an edge and apply the formula
+	let mut without_edge = graph.remove_edges_renumbered(&[0]);
+	assert_eq!(without_edge.edges(), graph.edges() - 1);
+
+	let pulled = graph.pull_edge(0);
+	assert!(pulled.vertexes() == graph.vertexes() - 1);
+
+	return chromatic_polynomial(&without_edge) - chromatic_polynomial(&pulled);
 }
 
 /// Compute chromatic polynomial of a graph
 fn chromatic_polynomial(graph: &Graph) -> Polynomial {
-	let n = graph.vertexes();
-	let mut dfs_space = DFSSpace::new(&graph);
-	let mut components = dfs_space.find_connected_components(&graph);
-	components.sort_by_key(|c| c.len());
-	components.reverse();
+	let (decomposition, re_numeration, component_graphs) = decompose_connected_components(graph);
+
 	let mut result = Polynomial::new(vec![1]);
-	for component in components {
-		let mut component_graph = Graph::new(n);
-		for (u, v) in graph.edges() {
-			if component.contains(&u) && component.contains(&v) {
-				component_graph.add_edge(u, v);
-			}
-		}
-		result *= chromatic_polynom_connected(&component_graph);
+	for component in component_graphs {
+		result *= chromatic_polynomial_dummy(&component);
 	}
 
 	result
@@ -163,42 +178,15 @@ fn main() {
 	let mut input = InputReader::new();
 	// let mut output = OutputWriter::new();
 
-	let n: usize = input.next();
+	let graph = Graph::from_stdin(&mut input, false);
+	let result = chromatic_polynomial(&graph);
 
-	// Input prufer code
-	let mut prufer = vec![0_usize; n - 2];
-	for i in 0..n - 2 {
-		prufer[i] = input.next();
-	}
-
-	// Build tree as a list of edges
-	let mut tree = vec![];
-	let mut degree = vec![1_usize; n + 1];
-	for &u in &prufer {
-		degree[u] += 1;
-	}
-	let mut leaf_queue = BinaryHeap::new();
-	for i in 1..n + 1 {
-		if degree[i] == 1 {
-			leaf_queue.push(Reverse(i));
-		}
-	}
-	for &u in &prufer {
-		let Reverse(v) = leaf_queue.pop().unwrap();
-		tree.push((u, v));
-		degree[u] -= 1;
-		if degree[u] == 1 {
-			leaf_queue.push(Reverse(u));
-		}
-	}
-	// add last edge
-	let Reverse(v) = leaf_queue.pop().unwrap();
-	let Reverse(u) = leaf_queue.pop().unwrap();
-	tree.push((u, v));
-
-
-	// Output tree
-	for (u, v) in tree {
-		println!("{} {}", u, v);
-	}
+	println!("{}", result.degree());
+	// Print the result via join
+	println!("{}", result.coefficients.iter()
+		.rev()
+		.map(|c| c.to_string())
+		.collect::<Vec<_>>()
+		.join(" ")
+	);
 }

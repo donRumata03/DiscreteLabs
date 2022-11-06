@@ -10,6 +10,10 @@ pub struct DFSSpace {
 	pub children: Vec<Vec<usize>>,
 }
 
+fn fill<T: Clone>(v: &mut Vec<T>, value: &T) {
+	v.iter_mut().for_each(|x| *x = value.clone());
+}
+
 impl DFSSpace {
 	pub fn new(graph: &Graph) -> Self {
 		let n = graph.vertexes();
@@ -24,10 +28,10 @@ impl DFSSpace {
 
 	pub fn clear(&mut self) {
 		self.time = 0;
-		self.visit_colors.fill(VisitColor::White);
-		self.t_in.fill(0);
-		self.t_out.fill(0);
-		self.children.fill(Vec::new());
+		fill(&mut self.visit_colors, &VisitColor::White);
+		fill(&mut self.t_in, &0);
+		fill(&mut self.t_out, &0);
+		fill(&mut self.children, &Vec::new());
 	}
 
 	pub fn ignore_vertexes(&mut self, vertexes: &[usize]) {

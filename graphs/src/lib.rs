@@ -66,6 +66,10 @@ fn minmax<T: Ord>(a: T, b: T) -> (T, T) {
 	}
 }
 
+fn sort_pair<T: Ord>((a, b): (T, T)) -> (T, T) {
+	minmax(a, b)
+}
+
 #[derive(Debug, Clone)]
 pub struct Decomposition {
 	pub elements: usize,
