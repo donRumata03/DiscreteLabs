@@ -14,26 +14,26 @@ pub trait CRing {
 
     fn power(&self, a: Self::E, n: usize) -> Self::E {
         // Use binary exponentiation
-        let mut result = Self::one();
+        let mut result = self.one();
         let mut a = a;
         let mut n = n;
         while n > 0 {
             if n % 2 == 1 {
-                result = Self::multiply(result, a);
+                result = self.multiply(result, a);
             }
-            a = Self::multiply(a, a);
+            a = self.multiply(a, a);
             n /= 2;
         }
         result
     }
 
     fn factorial(&self, n: usize) -> Self::E {
-        let mut result = Self::one();
-        let mut multiplier = Self::one();
+        let mut result = self.one();
+        let mut multiplier = self.one();
 
         for _ in 0..n {
-            multiplier = Self::add(multiplier, Self::one());
-            result = Self::multiply(result, multiplier);
+            multiplier = self.add(multiplier, self.one());
+            result = self.multiply(result, multiplier);
         }
 
         result

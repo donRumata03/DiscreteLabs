@@ -3,14 +3,18 @@ use std::ops::{Add, Neg};
 
 /// Formal polynomial over a commutative ring `R[x]`
 pub struct Polynomial<R: CRing> {
-    coefficients: Vec<R::E>,
+    pub(crate) coefficients: Vec<R::E>,
 }
 
 impl<R: CRing> Polynomial<R> {
-    fn new(coefficients: Vec<R::E>) -> Polynomial<R> {
+    pub(crate) fn new(coefficients: Vec<R::E>, ring: &R) -> Polynomial<R> {
+        Polynomial { coefficients }
+    }
+
+    pub(crate) fn new_truncated(coefficients: Vec<R::E>, ring: &R) -> Polynomial<R> {
         let mut res = Polynomial { coefficients };
 
-        if let Some(i) = res.coefficients.iter().rposition(|&x| x != R::zero()) {
+        if let Some(i) = res.coefficients.iter().rposition(|&x| x != ring.zero()) {
             res.coefficients.truncate(i + 1);
         }
         res
@@ -21,66 +25,53 @@ impl<R: CRing> Polynomial<R> {
     }
 }
 
-// Polynomial addition
+// Polynomial addition (take two polynomials and ring instance as arguments)
+impl<R: CRing> Polynomial<R> {
+    fn add(self, other: Polynomial<R>, ring: &R) -> Polynomial<R> {
+        let mut res = Polynomial::new_truncated(
+            vec![ring.zero(); self.degree().max(other.degree()) + 1],
+            ring,
+        );
 
-impl<R: CRing> Add for Polynomial<R> {
-    type Output = Polynomial<R>;
-
-    fn add(self, other: Polynomial<R>) -> Polynomial<R> {
-        let mut result = Vec::new();
-        let mut self_iter = self.coefficients.into_iter();
-        let mut other_iter = other.coefficients.into_iter();
-        loop {
-            match (self_iter.next(), other_iter.next()) {
-                (Some(self_coefficient), Some(other_coefficient)) => {
-                    result.push(R::add(self_coefficient, other_coefficient));
-                }
-                (Some(self_coefficient), None) => {
-                    result.push(self_coefficient);
-                }
-                (None, Some(other_coefficient)) => {
-                    result.push(other_coefficient);
-                }
-                (None, None) => {
-                    break;
-                }
-            }
+        for i in 0..res.coefficients.len() {
+            let subscript = |v: &Vec<R::E>| if i < v.len() { v[i] } else { ring.zero() };
+            res.coefficients[i] = ring.add(
+                subscript(&self.coefficients),
+                subscript(&other.coefficients),
+            );
         }
-        Polynomial::new(result)
+
+        res
     }
 }
 
-// Polynomial multiplication
-
+// Polynomial multiplication (take two polynomials and ring instance as arguments)
 impl<R: CRing> Polynomial<R> {
-    fn multiply(&self, other: &Polynomial<R>) -> Polynomial<R> {
-        let mut result = Vec::new();
-        for i in 0..self.degree() + other.degree() + 1 {
-            result.push(R::zero());
-        }
-        for (i, self_coefficient) in self.coefficients.iter().enumerate() {
-            for (j, other_coefficient) in other.coefficients.iter().enumerate() {
-                result[i + j] = R::add(
-                    result[i + j],
-                    R::multiply(*self_coefficient, *other_coefficient),
+    fn multiply(self, other: Polynomial<R>, ring: &R) -> Polynomial<R> {
+        let mut res = Polynomial::new(vec![ring.zero(); self.degree() + other.degree() + 1], ring);
+
+        for i in 0..self.coefficients.len() {
+            for j in 0..other.coefficients.len() {
+                res.coefficients[i + j] = ring.add(
+                    res.coefficients[i + j],
+                    ring.multiply(self.coefficients[i], other.coefficients[j]),
                 );
             }
         }
-        Polynomial::new(result)
+
+        res
     }
 }
 
-// negation
+// Polynomial negation (take a polynomial and ring instance as arguments)
+impl<R: CRing> Polynomial<R> {
+    fn negate(self, ring: &R) -> Polynomial<R> {
+        let mut res = Polynomial::new(vec![ring.zero(); self.degree() + 1], ring);
 
-impl<R: CRing> Neg for Polynomial<R> {
-    type Output = Polynomial<R>;
+        for i in 0..self.coefficients.len() {
+            res.coefficients[i] = ring.negate(self.coefficients[i]);
+        }
 
-    fn neg(self) -> Polynomial<R> {
-        Polynomial::new(
-            self.coefficients
-                .into_iter()
-                .map(|x| R::negate(x))
-                .collect(),
-        )
+        res
     }
 }

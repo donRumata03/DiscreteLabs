@@ -1,43 +1,75 @@
 use crate::*;
+use std::ops::Index;
 
 /// Lazy formal power series over a commutative ring `R[[x]]`
-pub trait FormalSeries<T: CRing> {
-    fn at(&self, n: usize) -> T::E;
+pub trait FormalSeries<R: CRing> {
+    fn at(&mut self, n: usize, ring: &R) -> R::E;
 }
 
-pub struct FormalSeriesHelper<T: CRing> {
-    computed_prefix: Polynomial<T>,
+pub trait FormalSeriesForCaching<R: CRing> {
+    fn get_computed_prefix(&mut self) -> &mut Polynomial<R>;
+    fn compute_up_to(&mut self, n: usize, ring: &R);
+}
+
+impl<R: CRing, C: FormalSeriesForCaching<R>> FormalSeries<R> for C {
+    fn at(&mut self, n: usize, ring: &R) -> R::E {
+        if self.get_computed_prefix().coefficients.len() <= n {
+            self.compute_up_to(n, &ring);
+        }
+        self.get_computed_prefix().coefficients[n]
+    }
+}
+
+trait Nothing<R: CRing> {
+    fn computed(&mut self, n: usize, value: R::E, ring: &R);
+}
+impl<R: CRing, C: FormalSeriesForCaching<R>> Nothing<R> for C {
+    fn computed(&mut self, n: usize, value: R::E, ring: &R) {
+        let mut coefficients = &mut self.get_computed_prefix().coefficients;
+        while coefficients.len() <= n {
+            coefficients.push(ring.zero());
+        }
+        self.get_computed_prefix().coefficients[n] = value;
+    }
+}
+
+pub struct FormalSeriesCacher<R: CRing> {
+    computed_prefix: Polynomial<R>,
 }
 
 // Series multiplication
 
-pub struct FormalSeriesMul<T: CRing> {
-    a: Box<dyn FormalSeries<T>>,
-    b: Box<dyn FormalSeries<T>>,
-    computed_prefix: Polynomial<T>,
+pub struct FormalSeriesMul<R: CRing> {
+    a: Box<dyn FormalSeries<R>>,
+    b: Box<dyn FormalSeries<R>>,
+    computed_prefix: Polynomial<R>,
 }
 
-impl<T: CRing> FormalSeriesMul<T> {
-    pub fn new(a: Box<dyn FormalSeries<T>>, b: Box<dyn FormalSeries<T>>) -> Self {
+impl<R: CRing> FormalSeriesMul<R> {
+    pub fn new(a: Box<dyn FormalSeries<R>>, b: Box<dyn FormalSeries<R>>, ring: &R) -> Self {
         FormalSeriesMul {
             a,
             b,
-            computed_prefix: Polynomial::new(),
+            computed_prefix: Polynomial::new_truncated(vec![], ring),
         }
     }
 }
 
-impl<T: CRing> FormalSeries<T> for FormalSeriesMul<T> {
-    fn at(&self, n: usize) -> T::E {
-        if n < self.computed_prefix.len() {
-            self.computed_prefix.at(n)
-        } else {
-            let mut result = T::zero();
-            for i in 0..n {
-                result = T::add(result, T::multiply(self.a.at(i), self.b.at(n - i)));
+impl<R: CRing> FormalSeriesForCaching<R> for FormalSeriesMul<R> {
+    fn get_computed_prefix(&mut self) -> &mut Polynomial<R> {
+        &mut self.computed_prefix
+    }
+
+    fn compute_up_to(&mut self, n: usize, ring: &R) {
+        for i in self.get_computed_prefix().coefficients.len()..=n {
+            let mut sum = ring.zero();
+            for j in 0..=i {
+                sum = ring.add(
+                    sum,
+                    ring.multiply(self.a.at(j, &ring), self.b.at(i - j, &ring)),
+                );
             }
-            self.computed_prefix.push(result);
-            result
+            self.computed(i, sum, &ring);
         }
     }
 }
