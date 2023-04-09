@@ -7,21 +7,28 @@ pub struct Polynomial<R: CRing> {
 }
 
 impl<R: CRing> Polynomial<R> {
-    pub(crate) fn new(coefficients: Vec<R::E>, ring: &R) -> Polynomial<R> {
+    pub fn new(coefficients: Vec<R::E>) -> Polynomial<R> {
         Polynomial { coefficients }
     }
 
-    pub(crate) fn new_truncated(coefficients: Vec<R::E>, ring: &R) -> Polynomial<R> {
+    pub fn new_truncated(coefficients: Vec<R::E>, ring: &R) -> Polynomial<R> {
         let mut res = Polynomial { coefficients };
-
-        if let Some(i) = res.coefficients.iter().rposition(|&x| x != ring.zero()) {
-            res.coefficients.truncate(i + 1);
-        }
+        res.truncate(ring);
         res
     }
 
-    fn degree(&self) -> usize {
+    pub fn truncate(&mut self, ring: &R) {
+        if let Some(i) = self.coefficients.iter().rposition(|&x| x != ring.zero()) {
+            self.coefficients.truncate(i + 1);
+        }
+    }
+
+    pub fn degree(&self) -> usize {
         self.coefficients.len() - 1
+    }
+
+    pub fn at(&self, n: usize, ring: &R) -> R::E {
+        self.coefficients[n]
     }
 }
 
@@ -48,7 +55,7 @@ impl<R: CRing> Polynomial<R> {
 // Polynomial multiplication (take two polynomials and ring instance as arguments)
 impl<R: CRing> Polynomial<R> {
     fn multiply(self, other: Polynomial<R>, ring: &R) -> Polynomial<R> {
-        let mut res = Polynomial::new(vec![ring.zero(); self.degree() + other.degree() + 1], ring);
+        let mut res = Polynomial::new(vec![ring.zero(); self.degree() + other.degree() + 1]);
 
         for i in 0..self.coefficients.len() {
             for j in 0..other.coefficients.len() {
@@ -66,7 +73,7 @@ impl<R: CRing> Polynomial<R> {
 // Polynomial negation (take a polynomial and ring instance as arguments)
 impl<R: CRing> Polynomial<R> {
     fn negate(self, ring: &R) -> Polynomial<R> {
-        let mut res = Polynomial::new(vec![ring.zero(); self.degree() + 1], ring);
+        let mut res = Polynomial::new(vec![ring.zero(); self.degree() + 1]);
 
         for i in 0..self.coefficients.len() {
             res.coefficients[i] = ring.negate(self.coefficients[i]);

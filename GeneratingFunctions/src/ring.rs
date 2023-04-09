@@ -12,6 +12,10 @@ pub trait CRing {
     fn multiply(&self, a: Self::E, b: Self::E) -> Self::E; // Both associative and commutative
     fn one(&self) -> Self::E;
 
+    fn subtract(&self, a: Self::E, b: Self::E) -> Self::E {
+        self.add(a, self.negate(b))
+    }
+
     fn power(&self, a: Self::E, n: usize) -> Self::E {
         // Use binary exponentiation
         let mut result = self.one();
@@ -40,15 +44,25 @@ pub trait CRing {
     }
 }
 
+pub trait Field: CRing {
+    fn inverse(&self, a: Self::E) -> Self::E;
+    fn divide(&self, a: Self::E, b: Self::E) -> Self::E {
+        self.multiply(a, self.inverse(b))
+    }
+
+    // Also, distributivity of multiplication over addition is implied in field
+}
+
 /// Ring instance for Residues mod `m`
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Residue {
+pub struct PrimeResidue {
     modulo: u64,
 }
 
-impl Residue {
+impl PrimeResidue {
+    /// Modulo must be prime
     pub fn new(modulo: u64) -> Self {
-        Residue { modulo }
+        PrimeResidue { modulo }
     }
 
     pub fn modulo(&self) -> u64 {
@@ -56,7 +70,7 @@ impl Residue {
     }
 }
 
-impl CRing for Residue {
+impl CRing for PrimeResidue {
     type E = u64;
 
     fn add(&self, a: Self::E, b: Self::E) -> Self::E {
@@ -77,5 +91,12 @@ impl CRing for Residue {
 
     fn one(&self) -> Self::E {
         1
+    }
+}
+
+impl Field for PrimeResidue {
+    fn inverse(&self, a: Self::E) -> Self::E {
+        // Use binary exponentiation
+        self.power(a, (self.modulo - 2) as usize)
     }
 }
