@@ -2,7 +2,7 @@ use std::cmp::Eq;
 
 /// Commutative ring
 pub trait CRing {
-    type E: Copy + Eq; // Element type
+    type E: Clone; // Element type
 
     fn add(&self, a: Self::E, b: Self::E) -> Self::E; // Addition is both associative and commutative
     fn negate(&self, a: Self::E) -> Self::E; // negate is inverse element by addition
@@ -23,9 +23,9 @@ pub trait CRing {
         let mut n = n;
         while n > 0 {
             if n % 2 == 1 {
-                result = self.multiply(result, a);
+                result = self.multiply(result, a.clone());
             }
-            a = self.multiply(a, a);
+            a = self.multiply(a.clone(), a.clone());
             n /= 2;
         }
         result
@@ -36,12 +36,19 @@ pub trait CRing {
         let mut multiplier = self.one();
 
         for _ in 0..n {
-            multiplier = self.add(multiplier, self.one());
-            result = self.multiply(result, multiplier);
+            multiplier = self.add(multiplier.clone(), self.one());
+            result = self.multiply(result, multiplier.clone());
         }
 
         result
     }
+}
+
+/// Definitive ring
+pub trait DRing: CRing
+where
+    <Self as CRing>::E: Copy + Eq,
+{
 }
 
 pub trait Field: CRing {
@@ -51,6 +58,13 @@ pub trait Field: CRing {
     }
 
     // Also, distributivity of multiplication over addition is implied in field
+}
+
+/// Definitive field
+pub trait DField: Field + DRing
+where
+    Self::E: Copy + Eq,
+{
 }
 
 /// Ring instance for Residues mod `m`
@@ -93,6 +107,7 @@ impl CRing for PrimeResidue {
         1
     }
 }
+impl DRing for PrimeResidue {}
 
 impl Field for PrimeResidue {
     fn inverse(&self, a: Self::E) -> Self::E {

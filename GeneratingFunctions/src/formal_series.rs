@@ -1,22 +1,34 @@
 use crate::*;
+use std::cell::RefCell;
 use std::ops::Index;
+use std::rc::Rc;
 
 /// Lazy formal power series over a commutative ring `R[[x]]`
-pub trait FormalSeries<R: CRing> {
+pub trait FormalSeries<R: DRing>
+where
+    R::E: Copy + Eq,
+{
     fn at(&mut self, n: usize, ring: &R) -> R::E;
 }
 
-pub trait FormalSeriesForCaching<R: CRing> {
+trait FormalSeriesForCaching<R: DRing>: FormalSeries<R>
+where
+    R::E: Copy + Eq,
+{
     fn get_computed_prefix(&mut self) -> &mut Polynomial<R>;
     fn compute_next_at(&mut self, n: usize, ring: &R) -> R::E;
     fn compute_up_to(&mut self, n: usize, ring: &R) {
         for i in self.get_computed_prefix().coefficients.len()..=n {
-            self.computed(i, self.compute_next_at(i, ring), ring);
+            let next = self.compute_next_at(i, ring);
+            self.computed(i, next, ring);
         }
     }
 }
 
-impl<R: CRing, C: FormalSeriesForCaching<R>> FormalSeries<R> for C {
+impl<R: DRing, C: FormalSeriesForCaching<R>> FormalSeries<R> for C
+where
+    R::E: Copy + Eq,
+{
     fn at(&mut self, n: usize, ring: &R) -> R::E {
         if self.get_computed_prefix().coefficients.len() <= n {
             self.compute_up_to(n, &ring);
@@ -25,10 +37,16 @@ impl<R: CRing, C: FormalSeriesForCaching<R>> FormalSeries<R> for C {
     }
 }
 
-trait Wtf<R: CRing> {
+trait Wtf<R: DRing>
+where
+    R::E: Copy + Eq,
+{
     fn computed(&mut self, n: usize, value: R::E, ring: &R);
 }
-impl<R: CRing, C: FormalSeriesForCaching<R>> Wtf<R> for C {
+impl<R: DRing, C: FormalSeriesForCaching<R> + ?Sized> Wtf<R> for C
+where
+    R::E: Copy + Eq,
+{
     fn computed(&mut self, n: usize, value: R::E, ring: &R) {
         let mut coefficients = &mut self.get_computed_prefix().coefficients;
         while coefficients.len() <= n {
@@ -40,14 +58,24 @@ impl<R: CRing, C: FormalSeriesForCaching<R>> Wtf<R> for C {
 
 /// Series addition
 
-pub struct FormalSeriesAdd<R: CRing> {
-    a: Box<dyn FormalSeries<R>>,
-    b: Box<dyn FormalSeries<R>>,
+pub struct FormalSeriesAdd<R: DRing>
+where
+    R::E: Copy + Eq,
+{
+    a: Rc<RefCell<dyn FormalSeries<R>>>,
+    b: Rc<RefCell<dyn FormalSeries<R>>>,
     computed_prefix: Polynomial<R>,
 }
 
-impl<R: CRing> FormalSeriesAdd<R> {
-    pub fn new(a: Box<dyn FormalSeries<R>>, b: Box<dyn FormalSeries<R>>, ring: &R) -> Self {
+impl<R: DRing> FormalSeriesAdd<R>
+where
+    R::E: Copy + Eq,
+{
+    pub fn new(
+        a: Rc<RefCell<dyn FormalSeries<R>>>,
+        b: Rc<RefCell<dyn FormalSeries<R>>>,
+        ring: &R,
+    ) -> Self {
         FormalSeriesAdd {
             a,
             b,
@@ -56,25 +84,37 @@ impl<R: CRing> FormalSeriesAdd<R> {
     }
 }
 
-impl<R: CRing> FormalSeriesForCaching<R> for FormalSeriesAdd<R> {
+impl<R: DRing> FormalSeriesForCaching<R> for FormalSeriesAdd<R>
+where
+    R::E: Copy + Eq,
+{
     fn get_computed_prefix(&mut self) -> &mut Polynomial<R> {
         &mut self.computed_prefix
     }
 
     fn compute_next_at(&mut self, n: usize, ring: &R) -> R::E {
-        ring.add(self.a.at(n, ring), self.b.at(n, ring))
+        ring.add(
+            self.a.borrow_mut().at(n, ring),
+            self.b.borrow_mut().at(n, ring),
+        )
     }
 }
 
 /// Series negation
 
-pub struct FormalSeriesNegation<R: CRing> {
-    a: Box<dyn FormalSeries<R>>,
+pub struct FormalSeriesNegation<R: DRing>
+where
+    R::E: Copy + Eq,
+{
+    a: Rc<RefCell<dyn FormalSeries<R>>>,
     computed_prefix: Polynomial<R>,
 }
 
-impl<R: CRing> FormalSeriesNegation<R> {
-    pub fn new(a: Box<dyn FormalSeries<R>>, ring: &R) -> Self {
+impl<R: DRing> FormalSeriesNegation<R>
+where
+    R::E: Copy + Eq,
+{
+    pub fn new(a: Rc<RefCell<dyn FormalSeries<R>>>, ring: &R) -> Self {
         FormalSeriesNegation {
             a,
             computed_prefix: Polynomial::new(vec![]),
@@ -82,35 +122,51 @@ impl<R: CRing> FormalSeriesNegation<R> {
     }
 }
 
-impl<R: CRing> FormalSeriesForCaching<R> for FormalSeriesNegation<R> {
+impl<R: DRing> FormalSeriesForCaching<R> for FormalSeriesNegation<R>
+where
+    R::E: Copy + Eq,
+{
     fn get_computed_prefix(&mut self) -> &mut Polynomial<R> {
         &mut self.computed_prefix
     }
 
     fn compute_next_at(&mut self, n: usize, ring: &R) -> R::E {
-        ring.negate(self.a.at(n, ring))
+        ring.negate(self.a.borrow_mut().at(n, ring))
     }
 }
 
-// Series multiplication
+/// Series multiplication
 
-pub struct FormalSeriesMul<R: CRing> {
-    a: Box<dyn FormalSeries<R>>,
-    b: Box<dyn FormalSeries<R>>,
+pub struct FormalSeriesMul<R: DRing>
+where
+    R::E: Copy + Eq,
+{
+    a: Rc<RefCell<dyn FormalSeries<R>>>,
+    b: Rc<RefCell<dyn FormalSeries<R>>>,
     computed_prefix: Polynomial<R>,
 }
 
-impl<R: CRing> FormalSeriesMul<R> {
-    pub fn new(a: Box<dyn FormalSeries<R>>, b: Box<dyn FormalSeries<R>>, ring: &R) -> Self {
+impl<R: DRing> FormalSeriesMul<R>
+where
+    R::E: Copy + Eq,
+{
+    pub fn new(
+        a: Rc<RefCell<dyn FormalSeries<R>>>,
+        b: Rc<RefCell<dyn FormalSeries<R>>>,
+        ring: &R,
+    ) -> Self {
         FormalSeriesMul {
             a,
             b,
-            computed_prefix: Polynomial::new_truncated(vec![], ring),
+            computed_prefix: Polynomial::new(vec![]),
         }
     }
 }
 
-impl<R: CRing> FormalSeriesForCaching<R> for FormalSeriesMul<R> {
+impl<R: DRing> FormalSeriesForCaching<R> for FormalSeriesMul<R>
+where
+    R::E: Copy + Eq,
+{
     fn get_computed_prefix(&mut self) -> &mut Polynomial<R> {
         &mut self.computed_prefix
     }
@@ -120,23 +176,36 @@ impl<R: CRing> FormalSeriesForCaching<R> for FormalSeriesMul<R> {
         for i in 0..=n {
             sum = ring.add(
                 sum,
-                ring.multiply(self.a.at(i, &ring), self.b.at(n - i, &ring)),
+                ring.multiply(
+                    self.a.borrow_mut().at(i, ring),
+                    self.b.borrow_mut().at(n - i, ring),
+                ),
             );
         }
+        sum
     }
 }
 
-// Series division
+/// Series division
 
-#[derive(Debug, Clone)]
-pub struct FormalSeriesDiv<R: CRing> {
-    a: Box<dyn FormalSeries<R>>,
-    b: Box<dyn FormalSeries<R>>,
-    computed_prefix: Polynomial<R>,
+pub struct FormalSeriesDiv<F: DField>
+where
+    F::E: Copy + Eq,
+{
+    a: Rc<RefCell<dyn FormalSeries<F>>>,
+    b: Rc<RefCell<dyn FormalSeries<F>>>,
+    computed_prefix: Polynomial<F>,
 }
 
-impl<R: CRing> FormalSeriesDiv<R> {
-    pub fn new(a: Box<dyn FormalSeries<R>>, b: Box<dyn FormalSeries<R>>) -> Self {
+impl<F: DField> FormalSeriesDiv<F>
+where
+    F::E: Copy + Eq,
+{
+    pub fn new(
+        a: Rc<RefCell<dyn FormalSeries<F>>>,
+        b: Rc<RefCell<dyn FormalSeries<F>>>,
+        field: &F,
+    ) -> Self {
         FormalSeriesDiv {
             a,
             b,
@@ -145,7 +214,10 @@ impl<R: CRing> FormalSeriesDiv<R> {
     }
 }
 
-impl<F: Field> FormalSeriesForCaching<F> for FormalSeriesDiv<F> {
+impl<F: DField> FormalSeriesForCaching<F> for FormalSeriesDiv<F>
+where
+    F::E: Copy + Eq,
+{
     fn get_computed_prefix(&mut self) -> &mut Polynomial<F> {
         &mut self.computed_prefix
     }
@@ -153,88 +225,148 @@ impl<F: Field> FormalSeriesForCaching<F> for FormalSeriesDiv<F> {
     fn compute_next_at(&mut self, n: usize, field: &F) -> F::E {
         let mut sum = field.zero();
         for i in 0..n {
-            sum = field.add(sum, field.multiply(self.at(i), self.b.at(n - i, &field)));
+            sum = field.add(
+                sum,
+                field.multiply(self.at(i, field), self.b.borrow_mut().at(n - i, field)),
+            );
         }
         field.divide(
-            field.subtract(self.a.at(n, &field), sum),
-            self.b.at(0, &field),
+            field.subtract(self.a.borrow_mut().at(n, &field), sum),
+            self.b.borrow_mut().at(0, &field),
         )
     }
 }
 
 /// Constant series
 
-pub struct FormalSeriesAlways<R: CRing> {
+pub struct FormalSeriesAlways<R: DRing>
+where
+    R::E: Copy + Eq,
+{
     value: R::E,
+    computed_prefix: Polynomial<R>,
 }
 
-impl<R: CRing> FormalSeriesAlways<R> {
+impl<R: DRing> FormalSeriesAlways<R>
+where
+    R::E: Copy + Eq,
+{
     pub fn new(value: R::E) -> Self {
-        FormalSeriesAlways { value }
+        Self {
+            value,
+            computed_prefix: Polynomial::new(vec![]),
+        }
     }
 }
 
-impl<R: CRing> FormalSeries<R> for FormalSeriesAlways<R> {
-    fn at(&self, _n: usize, _ring: &R) -> R::E {
+impl<R: DRing> FormalSeriesForCaching<R> for FormalSeriesAlways<R>
+where
+    R::E: Copy + Eq,
+{
+    fn get_computed_prefix(&mut self) -> &mut Polynomial<R> {
+        &mut self.computed_prefix
+    }
+
+    fn compute_next_at(&mut self, n: usize, ring: &R) -> R::E {
         self.value
     }
 }
 
 /// Polynomial series
 
-pub struct FormalSeriesPolynomial<R: CRing> {
+pub struct FormalSeriesPolynomial<R: DRing>
+where
+    R::E: Copy + Eq,
+{
     poly: Polynomial<R>,
+    computed_prefix: Polynomial<R>,
 }
 
-impl<R: CRing> FormalSeriesPolynomial<R> {
+impl<R: DRing> FormalSeriesPolynomial<R>
+where
+    R::E: Copy + Eq,
+{
     pub fn new(poly: Polynomial<R>) -> Self {
-        FormalSeriesPolynomial { poly }
+        Self {
+            poly,
+            computed_prefix: Polynomial::new(vec![]),
+        }
     }
 }
 
-impl<R: CRing> FormalSeries<R> for FormalSeriesPolynomial<R> {
-    fn at(&mut self, n: usize, ring: &R) -> R::E {
-        self.poly.at(n, ring)
+impl<R: DRing> FormalSeriesForCaching<R> for FormalSeriesPolynomial<R>
+where
+    R::E: Copy + Eq,
+{
+    fn get_computed_prefix(&mut self) -> &mut Polynomial<R> {
+        &mut self.computed_prefix
+    }
+
+    fn compute_next_at(&mut self, n: usize, ring: &R) -> R::E {
+        if n > self.poly.degree() {
+            ring.zero()
+        } else {
+            self.poly.at(n, ring)
+        }
     }
 }
 
 /// Ring of formal power series
 
-struct FormalSeriesRing<R: CRing> {
+struct FormalSeriesRing<R: DRing>
+where
+    R::E: Copy + Eq,
+{
     ring: R,
 }
 
-impl<R: CRing> FormalSeriesRing<R> {
+impl<R: DRing> FormalSeriesRing<R>
+where
+    R::E: Copy + Eq,
+{
     pub fn new(ring: R) -> Self {
         FormalSeriesRing { ring }
     }
 }
 
-impl<R: CRing> Ring for FormalSeriesRing<R> {
-    type E = Box<dyn FormalSeries<R>>;
+impl<R: DRing + 'static> CRing for FormalSeriesRing<R>
+where
+    R::E: Copy + Eq,
+{
+    type E = Rc<RefCell<dyn FormalSeries<R>>>;
 
     fn zero(&self) -> Self::E {
-        Box::new(FormalSeriesAlways::new(self.ring.zero()))
+        Rc::new(RefCell::new(FormalSeriesAlways::new(self.ring.zero())))
     }
 
     fn one(&self) -> Self::E {
-        Box::new(FormalSeriesAlways::new(self.ring.one()))
+        Rc::new(RefCell::new(FormalSeriesAlways::new(self.ring.one())))
     }
 
-    fn add(&self, a: &Self::E, b: &Self::E) -> Self::E {
-        Box::new(FormalSeriesAdd::new(a.clone(), b.clone(), &self.ring))
+    fn add(&self, a: Self::E, b: Self::E) -> Self::E {
+        Rc::new(RefCell::new(FormalSeriesAdd::new(a, b, &self.ring)))
     }
 
-    fn negate(&self, a: &Self::E) -> Self::E {
-        Box::new(FormalSeriesNegation::new(a.clone(), &self.ring))
+    fn multiply(&self, a: Self::E, b: Self::E) -> Self::E {
+        Rc::new(RefCell::new(FormalSeriesMul::new(a, b, &self.ring)))
     }
 
-    fn multiply(&self, a: &Self::E, b: &Self::E) -> Self::E {
-        Box::new(FormalSeriesMul::new(a.clone(), b.clone(), &self.ring))
+    fn negate(&self, a: Self::E) -> Self::E {
+        Rc::new(RefCell::new(FormalSeriesNegation::new(a, &self.ring)))
     }
+}
 
-    fn divide(&self, a: &Self::E, b: &Self::E) -> Self::E {
-        Box::new(FormalSeriesDiv::new(a.clone(), b.clone()))
+/// Field of formal power series
+impl<F: DField + 'static> Field for FormalSeriesRing<F>
+where
+    F::E: Copy + Eq,
+{
+    fn inverse(&self, a: Self::E) -> Self::E {
+        Rc::new(RefCell::new(FormalSeriesDiv::new(
+            self.one(),
+            a,
+            &self.ring,
+        )))
     }
 }
 

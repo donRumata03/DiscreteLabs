@@ -2,11 +2,18 @@ use crate::*;
 use std::ops::{Add, Neg};
 
 /// Formal polynomial over a commutative ring `R[x]`
-pub struct Polynomial<R: CRing> {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Polynomial<R: DRing>
+where
+    R::E: Copy + Eq,
+{
     pub(crate) coefficients: Vec<R::E>,
 }
 
-impl<R: CRing> Polynomial<R> {
+impl<R: DRing> Polynomial<R>
+where
+    R::E: Copy + Eq,
+{
     pub fn new(coefficients: Vec<R::E>) -> Polynomial<R> {
         Polynomial { coefficients }
     }
@@ -33,7 +40,10 @@ impl<R: CRing> Polynomial<R> {
 }
 
 // Polynomial addition (take two polynomials and ring instance as arguments)
-impl<R: CRing> Polynomial<R> {
+impl<R: DRing> Polynomial<R>
+where
+    R::E: Copy + Eq,
+{
     fn add(self, other: Polynomial<R>, ring: &R) -> Polynomial<R> {
         let mut res = Polynomial::new_truncated(
             vec![ring.zero(); self.degree().max(other.degree()) + 1],
@@ -53,7 +63,10 @@ impl<R: CRing> Polynomial<R> {
 }
 
 // Polynomial multiplication (take two polynomials and ring instance as arguments)
-impl<R: CRing> Polynomial<R> {
+impl<R: DRing> Polynomial<R>
+where
+    R::E: Copy + Eq,
+{
     fn multiply(self, other: Polynomial<R>, ring: &R) -> Polynomial<R> {
         let mut res = Polynomial::new(vec![ring.zero(); self.degree() + other.degree() + 1]);
 
@@ -71,7 +84,10 @@ impl<R: CRing> Polynomial<R> {
 }
 
 // Polynomial negation (take a polynomial and ring instance as arguments)
-impl<R: CRing> Polynomial<R> {
+impl<R: DRing> Polynomial<R>
+where
+    R::E: Copy + Eq,
+{
     fn negate(self, ring: &R) -> Polynomial<R> {
         let mut res = Polynomial::new(vec![ring.zero(); self.degree() + 1]);
 
