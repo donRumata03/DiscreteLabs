@@ -4,14 +4,14 @@ use std::ops::Index;
 use std::rc::Rc;
 
 /// Lazy formal power series over a commutative ring `R[[x]]`
-pub trait FormalSeries<R: DRing>
+pub trait FormalSeries<R: ERing>
 where
     R::E: Copy + Eq,
 {
     fn at(&mut self, n: usize, ring: &R) -> R::E;
 }
 
-trait FormalSeriesForCaching<R: DRing>: FormalSeries<R>
+trait FormalSeriesForCaching<R: ERing>
 where
     R::E: Copy + Eq,
 {
@@ -25,7 +25,7 @@ where
     }
 }
 
-impl<R: DRing, C: FormalSeriesForCaching<R>> FormalSeries<R> for C
+impl<R: ERing, C: FormalSeriesForCaching<R>> FormalSeries<R> for C
 where
     R::E: Copy + Eq,
 {
@@ -37,13 +37,13 @@ where
     }
 }
 
-trait Wtf<R: DRing>
+trait Wtf<R: ERing>
 where
     R::E: Copy + Eq,
 {
     fn computed(&mut self, n: usize, value: R::E, ring: &R);
 }
-impl<R: DRing, C: FormalSeriesForCaching<R> + ?Sized> Wtf<R> for C
+impl<R: ERing, C: FormalSeriesForCaching<R> + ?Sized> Wtf<R> for C
 where
     R::E: Copy + Eq,
 {
@@ -58,7 +58,7 @@ where
 
 /// Series addition
 
-pub struct FormalSeriesAdd<R: DRing>
+pub struct FormalSeriesAdd<R: ERing>
 where
     R::E: Copy + Eq,
 {
@@ -67,7 +67,7 @@ where
     computed_prefix: Polynomial<R>,
 }
 
-impl<R: DRing> FormalSeriesAdd<R>
+impl<R: ERing> FormalSeriesAdd<R>
 where
     R::E: Copy + Eq,
 {
@@ -84,7 +84,7 @@ where
     }
 }
 
-impl<R: DRing> FormalSeriesForCaching<R> for FormalSeriesAdd<R>
+impl<R: ERing> FormalSeriesForCaching<R> for FormalSeriesAdd<R>
 where
     R::E: Copy + Eq,
 {
@@ -102,7 +102,7 @@ where
 
 /// Series negation
 
-pub struct FormalSeriesNegation<R: DRing>
+pub struct FormalSeriesNegation<R: ERing>
 where
     R::E: Copy + Eq,
 {
@@ -110,7 +110,7 @@ where
     computed_prefix: Polynomial<R>,
 }
 
-impl<R: DRing> FormalSeriesNegation<R>
+impl<R: ERing> FormalSeriesNegation<R>
 where
     R::E: Copy + Eq,
 {
@@ -122,7 +122,7 @@ where
     }
 }
 
-impl<R: DRing> FormalSeriesForCaching<R> for FormalSeriesNegation<R>
+impl<R: ERing> FormalSeriesForCaching<R> for FormalSeriesNegation<R>
 where
     R::E: Copy + Eq,
 {
@@ -137,7 +137,7 @@ where
 
 /// Series multiplication
 
-pub struct FormalSeriesMul<R: DRing>
+pub struct FormalSeriesMul<R: ERing>
 where
     R::E: Copy + Eq,
 {
@@ -146,7 +146,7 @@ where
     computed_prefix: Polynomial<R>,
 }
 
-impl<R: DRing> FormalSeriesMul<R>
+impl<R: ERing> FormalSeriesMul<R>
 where
     R::E: Copy + Eq,
 {
@@ -163,7 +163,7 @@ where
     }
 }
 
-impl<R: DRing> FormalSeriesForCaching<R> for FormalSeriesMul<R>
+impl<R: ERing> FormalSeriesForCaching<R> for FormalSeriesMul<R>
 where
     R::E: Copy + Eq,
 {
@@ -214,10 +214,7 @@ where
     }
 }
 
-impl<F: DField> FormalSeriesForCaching<F> for FormalSeriesDiv<F>
-where
-    F::E: Copy + Eq,
-{
+impl<F: EField> FormalSeriesForCaching<F> for FormalSeriesDiv<F> {
     fn get_computed_prefix(&mut self) -> &mut Polynomial<F> {
         &mut self.computed_prefix
     }
@@ -239,18 +236,12 @@ where
 
 /// Constant series
 
-pub struct FormalSeriesAlways<R: DRing>
-where
-    R::E: Copy + Eq,
-{
+pub struct FormalSeriesAlways<R: ERing> {
     value: R::E,
     computed_prefix: Polynomial<R>,
 }
 
-impl<R: DRing> FormalSeriesAlways<R>
-where
-    R::E: Copy + Eq,
-{
+impl<R: ERing> FormalSeriesAlways<R> {
     pub fn new(value: R::E) -> Self {
         Self {
             value,
@@ -259,10 +250,7 @@ where
     }
 }
 
-impl<R: DRing> FormalSeriesForCaching<R> for FormalSeriesAlways<R>
-where
-    R::E: Copy + Eq,
-{
+impl<R: ERing> FormalSeriesForCaching<R> for FormalSeriesAlways<R> {
     fn get_computed_prefix(&mut self) -> &mut Polynomial<R> {
         &mut self.computed_prefix
     }
@@ -274,18 +262,12 @@ where
 
 /// Polynomial series
 
-pub struct FormalSeriesPolynomial<R: DRing>
-where
-    R::E: Copy + Eq,
-{
+pub struct FormalSeriesPolynomial<R: ERing> {
     poly: Polynomial<R>,
     computed_prefix: Polynomial<R>,
 }
 
-impl<R: DRing> FormalSeriesPolynomial<R>
-where
-    R::E: Copy + Eq,
-{
+impl<R: ERing> FormalSeriesPolynomial<R> {
     pub fn new(poly: Polynomial<R>) -> Self {
         Self {
             poly,
@@ -294,10 +276,7 @@ where
     }
 }
 
-impl<R: DRing> FormalSeriesForCaching<R> for FormalSeriesPolynomial<R>
-where
-    R::E: Copy + Eq,
-{
+impl<R: ERing> FormalSeriesForCaching<R> for FormalSeriesPolynomial<R> {
     fn get_computed_prefix(&mut self) -> &mut Polynomial<R> {
         &mut self.computed_prefix
     }
@@ -313,26 +292,17 @@ where
 
 /// Ring of formal power series
 
-struct FormalSeriesRing<R: DRing>
-where
-    R::E: Copy + Eq,
-{
+struct FormalSeriesRing<R: ERing> {
     ring: R,
 }
 
-impl<R: DRing> FormalSeriesRing<R>
-where
-    R::E: Copy + Eq,
-{
+impl<R: ERing> FormalSeriesRing<R> {
     pub fn new(ring: R) -> Self {
         FormalSeriesRing { ring }
     }
 }
 
-impl<R: DRing + 'static> CRing for FormalSeriesRing<R>
-where
-    R::E: Copy + Eq,
-{
+impl<R: ERing + 'static> CRing for FormalSeriesRing<R> {
     type E = Rc<RefCell<dyn FormalSeries<R>>>;
 
     fn zero(&self) -> Self::E {
@@ -357,10 +327,7 @@ where
 }
 
 /// Field of formal power series
-impl<F: DField + 'static> Field for FormalSeriesRing<F>
-where
-    F::E: Copy + Eq,
-{
+impl<F: EField + 'static> Field for FormalSeriesRing<F> {
     fn inverse(&self, a: Self::E) -> Self::E {
         Rc::new(RefCell::new(FormalSeriesDiv::new(
             self.one(),

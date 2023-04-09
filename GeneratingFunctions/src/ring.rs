@@ -51,6 +51,12 @@ where
 {
 }
 
+/// Easy ring))))
+pub trait ERing: CRing<E = Self::D> + DRing {
+    // PFF… That's hilarious… I can't believe it works
+    type D: Copy + Eq; // WTF is going on here? It works??! OMG
+}
+
 pub trait Field: CRing {
     fn inverse(&self, a: Self::E) -> Self::E;
     fn divide(&self, a: Self::E, b: Self::E) -> Self::E {
@@ -66,6 +72,9 @@ where
     Self::E: Copy + Eq,
 {
 }
+
+/// Easy field (I'm not sure if it's a good name)
+pub trait EField: DField<E = Self::D> + ERing {}
 
 /// Ring instance for Residues mod `m`
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -109,9 +118,16 @@ impl CRing for PrimeResidue {
 }
 impl DRing for PrimeResidue {}
 
+impl ERing for PrimeResidue {
+    type D = u64;
+}
+
 impl Field for PrimeResidue {
     fn inverse(&self, a: Self::E) -> Self::E {
         // Use binary exponentiation
         self.power(a, (self.modulo - 2) as usize)
     }
 }
+
+impl DField for PrimeResidue {}
+impl EField for PrimeResidue {}
